@@ -1,0 +1,1247 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="DermTrack">
+<meta name="theme-color" content="#f5f0e8">
+<title>DermTrack</title>
+<link rel="manifest" href="./manifest.json">
+<link rel="apple-touch-icon" href="./icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --cream:#f5f0e8;--cream2:#ede8df;--cream3:#e2dbd0;
+  --ink:#1c1814;--ink2:#5a5248;--ink3:#9a9088;
+  --sage:#6b8f71;--sage-l:#e8f0e9;
+  --amber:#c8742a;--amber-l:#fdf0e3;
+  --rose:#b85c6e;--rose-l:#fbe8ec;
+  --sky:#4a7fa5;--sky-l:#e5f0f8;
+  --serif:'DM Serif Display',Georgia,serif;
+  --sans:'DM Sans',system-ui,sans-serif;
+  --r:16px;--r-sm:10px;
+  --shadow:0 2px 12px rgba(28,24,20,.08);
+  --shadow-md:0 4px 24px rgba(28,24,20,.12);
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+html,body{height:100%;overscroll-behavior:none;}
+body{background:var(--cream);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.5;max-width:520px;margin:0 auto;min-height:100vh;padding-bottom:88px;}
+
+.nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:520px;background:rgba(245,240,232,.95);backdrop-filter:blur(20px);border-top:1px solid var(--cream3);display:flex;z-index:100;padding:10px 0 max(14px,env(safe-area-inset-bottom));}
+.nb{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;background:none;border:none;cursor:pointer;font-family:var(--sans);font-size:10px;font-weight:500;color:var(--ink3);transition:color .2s;letter-spacing:.02em;}
+.nb.on{color:var(--ink);}
+.nb svg{width:22px;height:22px;stroke-width:1.6;}
+.nb .dot{width:4px;height:4px;border-radius:50%;background:var(--amber);opacity:0;transition:opacity .2s;}
+.nb.on .dot{opacity:1;}
+
+.page{display:none;}
+.page.on{display:block;animation:fi .25s ease;}
+@keyframes fi{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
+
+.hdr{padding:52px 20px 14px;position:sticky;top:0;z-index:50;background:rgba(245,240,232,.92);backdrop-filter:blur(16px);}
+.hdr-row{display:flex;align-items:baseline;justify-content:space-between;}
+.hdr h1{font-family:var(--serif);font-size:26px;font-weight:400;letter-spacing:-.01em;}
+.hdr-sub{font-size:12px;color:var(--ink3);margin-top:2px;}
+
+/* HERO */
+.hero{margin:0 16px 14px;background:var(--ink);color:var(--cream);border-radius:20px;padding:20px;position:relative;overflow:hidden;}
+.hero::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 75% 15%,rgba(200,116,42,.28) 0%,transparent 55%);pointer-events:none;}
+.qh-lbl{font-size:10px;font-weight:500;letter-spacing:.08em;opacity:.45;text-transform:uppercase;margin-bottom:12px;}
+.qh-title{font-family:var(--serif);font-size:19px;margin-bottom:18px;opacity:.9;}
+.tap-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.tap-item{background:rgba(255,255,255,.06);border-radius:12px;padding:12px;}
+.tap-name{font-size:10px;opacity:.5;margin-bottom:8px;font-weight:500;letter-spacing:.04em;text-transform:uppercase;}
+.tap-btns{display:flex;gap:4px;}
+.tap-btn{flex:1;height:32px;border-radius:7px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.05);color:rgba(255,255,255,.55);font-family:var(--sans);font-size:12px;font-weight:500;cursor:pointer;transition:all .15s;}
+.tap-btn.sel{background:var(--amber);border-color:var(--amber);color:#fff;}
+.tap-hint{font-size:9px;opacity:.4;margin-top:6px;line-height:1.3;}
+.outcome-quick{display:flex;gap:6px;margin-top:10px;}
+.oq-btn{flex:1;height:38px;border-radius:10px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.06);color:rgba(255,255,255,.65);font-family:var(--sans);font-size:12px;font-weight:500;cursor:pointer;transition:all .2s;}
+.oq-btn.sel-good{background:var(--sage);border-color:var(--sage);color:#fff;}
+.oq-btn.sel-mid{background:var(--amber);border-color:var(--amber);color:#fff;}
+.oq-btn.sel-bad{background:var(--rose);border-color:var(--rose);color:#fff;}
+
+/* SECTION */
+.section{padding:0 16px;margin-bottom:18px;}
+.s-lbl{font-size:11px;font-weight:500;letter-spacing:.07em;text-transform:uppercase;color:var(--ink3);margin-bottom:10px;}
+.card{background:#fff;border-radius:var(--r);box-shadow:var(--shadow);padding:16px;margin-bottom:10px;}
+.divider{height:1px;background:var(--cream2);margin:12px 0;}
+.row-label{font-size:12px;color:var(--ink2);margin-bottom:8px;font-weight:500;}
+
+/* CHIPS */
+.chips{display:flex;flex-wrap:wrap;gap:6px;}
+.chip{padding:7px 13px;border-radius:20px;border:1.5px solid var(--cream3);background:var(--cream);font-size:12px;font-weight:500;color:var(--ink2);cursor:pointer;transition:all .15s;white-space:nowrap;}
+.chip.on{border-color:var(--ink);background:var(--ink);color:var(--cream);}
+
+/* RADIO CHIPS (for POEM) */
+.radio-chips{display:flex;flex-wrap:wrap;gap:6px;}
+.radio-chip{padding:8px 14px;border-radius:18px;border:1.5px solid var(--cream3);background:var(--cream);font-size:12px;font-weight:500;color:var(--ink2);cursor:pointer;transition:all .15s;white-space:nowrap;}
+.radio-chip.sel{border-color:var(--ink);background:var(--ink);color:var(--cream);}
+
+/* SLIDERS */
+input[type=range]{width:100%;-webkit-appearance:none;appearance:none;height:4px;border-radius:2px;background:var(--cream3);outline:none;}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:20px;height:20px;border-radius:50%;background:#fff;border:2px solid var(--ink);cursor:pointer;box-shadow:0 1px 4px rgba(0,0,0,.15);}
+.sl-row{display:flex;align-items:center;gap:12px;}
+.sl-val{font-family:var(--serif);font-size:20px;min-width:28px;text-align:right;}
+.sl-labels{display:flex;justify-content:space-between;font-size:10px;color:var(--ink3);margin-top:4px;}
+
+/* INPUTS */
+textarea,input[type=text]{width:100%;background:var(--cream);border:1.5px solid var(--cream3);border-radius:var(--r-sm);padding:10px 12px;font-family:var(--sans);font-size:14px;color:var(--ink);outline:none;resize:none;transition:border-color .2s;}
+textarea:focus,input[type=text]:focus{border-color:var(--ink);}
+
+/* BUTTONS */
+.btn-primary{width:calc(100% - 32px);margin:0 16px 16px;background:var(--ink);color:var(--cream);font-family:var(--serif);font-size:17px;font-weight:400;border:none;border-radius:var(--r);padding:16px;cursor:pointer;transition:all .2s;letter-spacing:.01em;}
+.btn-primary:active{transform:scale(.98);opacity:.9;}
+.btn-sm{background:none;border:1.5px solid var(--cream3);color:var(--ink2);font-family:var(--sans);font-size:13px;font-weight:500;border-radius:var(--r-sm);padding:9px 14px;cursor:pointer;transition:all .15s;white-space:nowrap;}
+.btn-sm:hover{border-color:var(--ink2);}
+
+/* DETAILS TOGGLE */
+.details-toggle{display:flex;align-items:center;justify-content:space-between;padding:0 16px;margin-bottom:10px;}
+.dt-label{font-size:13px;color:var(--ink2);font-weight:500;}
+
+/* TOOLTIP */
+.tooltip-icon{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:50%;border:1px solid var(--ink3);color:var(--ink3);font-size:11px;font-weight:600;cursor:pointer;margin-left:6px;transition:all .2s;}
+.tooltip-icon:hover{border-color:var(--ink);color:var(--ink);background:var(--cream2);}
+.tooltip-text{font-size:11px;color:var(--ink2);background:var(--cream2);border-radius:8px;padding:8px;margin-top:4px;line-height:1.5;display:none;}
+.tooltip-text.show{display:block;}
+
+/* STATS */
+.stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:0 16px;margin-bottom:10px;}
+.stat-card{background:#fff;border-radius:var(--r);box-shadow:var(--shadow);padding:16px;}
+.stat-lbl{font-size:10px;color:var(--ink3);font-weight:500;letter-spacing:.06em;text-transform:uppercase;margin-bottom:6px;}
+.stat-val{font-family:var(--serif);font-size:32px;font-weight:400;line-height:1;}
+.stat-sub{font-size:11px;color:var(--ink3);margin-top:3px;}
+.stat-val.sage{color:var(--sage);}
+.stat-val.amber{color:var(--amber);}
+.stat-val.rose{color:var(--rose);}
+
+.chart-wrap{padding:0 16px;margin-bottom:10px;}
+.chart-card{background:#fff;border-radius:var(--r);box-shadow:var(--shadow);padding:16px;}
+.chart-title{font-size:13px;font-weight:500;margin-bottom:14px;}
+.bar-chart{display:flex;align-items:flex-end;gap:3px;height:88px;}
+.bc-col{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;}
+.bc-bar{width:100%;border-radius:4px 4px 0 0;min-height:2px;}
+.bc-lbl{font-size:9px;color:var(--ink3);}
+
+.donut-wrap{display:flex;align-items:center;gap:16px;}
+.donut-legend{flex:1;}
+.dl-row{display:flex;align-items:center;gap:8px;margin-bottom:6px;font-size:12px;}
+.dl-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+.dl-lbl{color:var(--ink2);flex:1;}
+.dl-val{font-weight:500;}
+
+.trig-row{display:flex;align-items:center;gap:10px;font-size:13px;}
+.trig-bar-bg{flex:1;height:5px;background:var(--cream2);border-radius:3px;overflow:hidden;}
+.trig-bar{height:100%;border-radius:3px;background:var(--amber);}
+.trig-n{font-size:11px;color:var(--ink3);min-width:24px;text-align:right;}
+.trig-name{flex:0 0 105px;font-size:12px;color:var(--ink2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+
+.insight{margin:0 16px 10px;background:#fff;border-radius:var(--r);box-shadow:var(--shadow);padding:14px;display:flex;gap:12px;}
+.ins-icon{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0;}
+.ins-title{font-size:13px;font-weight:500;margin-bottom:3px;}
+.ins-text{font-size:12px;color:var(--ink2);line-height:1.5;}
+
+/* LINE CHART */
+.line-chart-container{position:relative;width:100%;height:200px;margin-bottom:12px;}
+.line-chart-svg{width:100%;height:100%;}
+.chart-toggle-chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;}
+.ctc{padding:6px 12px;border-radius:16px;border:1.5px solid var(--cream3);background:var(--cream);font-size:11px;font-weight:500;color:var(--ink2);cursor:pointer;transition:all .15s;}
+.ctc.on{border-color:var(--ink);background:var(--ink);color:var(--cream);}
+
+/* POEM CARD */
+.poem-card{background:#fff;border-radius:var(--r);box-shadow:var(--shadow);padding:16px;margin-bottom:10px;}
+.poem-question{margin-bottom:18px;}
+.pq-label{font-size:13px;font-weight:500;color:var(--ink);margin-bottom:10px;}
+.pq-options{display:flex;flex-wrap:wrap;gap:6px;}
+.pq-option{padding:7px 12px;border-radius:16px;border:1.5px solid var(--cream3);background:var(--cream);font-size:12px;font-weight:500;color:var(--ink2);cursor:pointer;transition:all .15s;}
+.pq-option.sel{border-color:var(--ink);background:var(--ink);color:var(--cream);}
+
+.poem-badge{display:inline-block;padding:4px 12px;border-radius:16px;font-size:11px;font-weight:500;margin-top:6px;}
+.poem-badge.clean{background:var(--sage-l);color:var(--sage);}
+.poem-badge.light{background:var(--sky-l);color:var(--sky);}
+.poem-badge.moderate{background:var(--amber-l);color:var(--amber);}
+.poem-badge.severe{background:var(--rose-l);color:var(--rose);}
+.poem-badge.very-severe{background:#fce4ec;color:#c2185b;}
+
+.poem-history{margin-top:16px;}
+.poem-hist-item{background:var(--cream);border-radius:10px;padding:12px;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;}
+.phi-date{font-size:12px;color:var(--ink2);font-weight:500;}
+.phi-score{font-family:var(--serif);font-size:18px;font-weight:400;color:var(--ink);}
+
+/* CALENDAR */
+.cal-card{background:#fff;border-radius:var(--r);box-shadow:var(--shadow);padding:16px;margin-bottom:10px;}
+.cal-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
+.cal-month{font-family:var(--serif);font-size:16px;}
+.cal-arr{background:none;border:none;cursor:pointer;padding:6px;color:var(--ink2);font-size:20px;border-radius:8px;line-height:1;}
+.cal-arr:hover{background:var(--cream2);}
+.cal-g{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;}
+.cg-h{font-size:10px;color:var(--ink3);text-align:center;padding:3px 0;font-weight:500;}
+.cg-d{aspect-ratio:1;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:500;color:var(--ink3);cursor:pointer;transition:all .15s;}
+.cg-d:hover{background:var(--cream2);}
+.cg-d.has{color:var(--ink);}
+.cg-d.good{background:var(--sage-l);color:var(--sage);}
+.cg-d.mid{background:var(--amber-l);color:var(--amber);}
+.cg-d.bad{background:var(--rose-l);color:var(--rose);}
+.cg-d.today{outline:2px solid var(--ink);outline-offset:-1px;}
+.cg-d.empty{pointer-events:none;}
+
+.hist-item{background:#fff;border-radius:var(--r);box-shadow:var(--shadow);margin:0 16px 8px;padding:14px;cursor:pointer;transition:transform .15s;}
+.hist-item:active{transform:scale(.99);}
+.hi-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;}
+.hi-date{font-family:var(--serif);font-size:15px;}
+.hi-badge{font-size:11px;font-weight:500;padding:3px 10px;border-radius:12px;}
+.hi-badge.good{background:var(--sage-l);color:var(--sage);}
+.hi-badge.mid{background:var(--amber-l);color:var(--amber);}
+.hi-badge.bad{background:var(--rose-l);color:var(--rose);}
+.hi-pills{display:flex;gap:5px;flex-wrap:wrap;}
+.hi-pill{font-size:11px;background:var(--cream2);color:var(--ink2);padding:3px 8px;border-radius:7px;}
+
+/* SETTINGS */
+.ss-title{font-size:11px;font-weight:500;letter-spacing:.07em;text-transform:uppercase;color:var(--ink3);margin-bottom:8px;}
+.ss-card{background:#fff;border-radius:var(--r);box-shadow:var(--shadow);}
+.ss-row{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid var(--cream2);}
+.ss-row:last-child{border:none;}
+.ss-lbl{font-size:14px;}
+.ss-sub{font-size:11px;color:var(--ink3);margin-top:1px;}
+.toggle{width:44px;height:26px;border-radius:13px;background:var(--cream3);position:relative;cursor:pointer;transition:background .2s;border:none;flex-shrink:0;}
+.toggle.on{background:var(--sage);}
+.toggle::after{content:'';position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#fff;transition:transform .2s;box-shadow:0 1px 3px rgba(0,0,0,.2);}
+.toggle.on::after{transform:translateX(18px);}
+input[type=time]{background:var(--cream);border:1.5px solid var(--cream3);border-radius:8px;padding:6px 10px;font-family:var(--sans);font-size:13px;color:var(--ink);outline:none;}
+
+/* MODAL */
+.overlay{position:fixed;inset:0;background:rgba(28,24,20,.5);backdrop-filter:blur(8px);z-index:200;display:none;align-items:flex-end;justify-content:center;}
+.overlay.on{display:flex;}
+.modal{background:var(--cream);border-radius:24px 24px 0 0;width:100%;max-width:520px;max-height:85vh;overflow-y:auto;padding:20px 20px 40px;}
+.modal-handle{width:36px;height:4px;background:var(--cream3);border-radius:2px;margin:0 auto 20px;}
+.modal-title{font-family:var(--serif);font-size:20px;margin-bottom:16px;}
+.modal-row{display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--cream2);font-size:13px;}
+.modal-row:last-child{border:none;}
+.mr-k{color:var(--ink2);}
+.mr-v{font-weight:500;text-align:right;max-width:60%;}
+
+.toast{position:fixed;bottom:100px;left:50%;transform:translateX(-50%) translateY(10px);background:var(--ink);color:var(--cream);font-size:13px;font-weight:500;padding:10px 20px;border-radius:20px;opacity:0;transition:all .25s;pointer-events:none;white-space:nowrap;z-index:300;}
+.toast.on{opacity:1;transform:translateX(-50%) translateY(0);}
+.empty{text-align:center;padding:48px 24px;color:var(--ink3);font-size:13px;line-height:1.7;}
+.empty-ico{font-size:36px;margin-bottom:12px;}
+</style>
+</head>
+<body>
+
+<div class="toast" id="toast"></div>
+
+<div class="overlay" id="overlay">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="m-title"></div>
+    <div id="m-body"></div>
+    <div style="height:16px"></div>
+    <button class="btn-primary" onclick="closeModal()" style="width:100%;margin:0">Закрыть</button>
+  </div>
+</div>
+
+<!-- ═══ LOG ═══ -->
+<div class="page on" id="pg-log">
+  <div class="hdr">
+    <div class="hdr-row">
+      <h1>Дневник</h1>
+      <span id="streak-badge" style="font-size:12px;color:var(--amber);font-weight:500"></span>
+    </div>
+    <div class="hdr-sub" id="hdr-date"></div>
+  </div>
+
+  <div class="hero">
+    <div class="qh-lbl">Быстрый ввод · 1 минута
+      <span class="tooltip-icon" onclick="toggleTooltip(event)">?</span>
+    </div>
+    <div class="tooltip-text" id="quick-tooltip">0 — нет, 3 — слабо, 6 — заметно, 10 — невыносимо</div>
+    <div class="qh-title">Как кожа сегодня?</div>
+    <div class="tap-grid">
+      <div class="tap-item">
+        <div class="tap-name">Зуд</div>
+        <div class="tap-btns" id="q-itch">
+          <button class="tap-btn" data-v="0">0</button>
+          <button class="tap-btn" data-v="3">3</button>
+          <button class="tap-btn" data-v="6">6</button>
+          <button class="tap-btn" data-v="10">10</button>
+        </div>
+      </div>
+      <div class="tap-item">
+        <div class="tap-name">Краснота</div>
+        <div class="tap-btns" id="q-red">
+          <button class="tap-btn" data-v="0">0</button>
+          <button class="tap-btn" data-v="3">3</button>
+          <button class="tap-btn" data-v="6">6</button>
+          <button class="tap-btn" data-v="10">10</button>
+        </div>
+      </div>
+      <div class="tap-item">
+        <div class="tap-name">Сухость</div>
+        <div class="tap-btns" id="q-dry">
+          <button class="tap-btn" data-v="0">0</button>
+          <button class="tap-btn" data-v="3">3</button>
+          <button class="tap-btn" data-v="6">6</button>
+          <button class="tap-btn" data-v="10">10</button>
+        </div>
+      </div>
+      <div class="tap-item">
+        <div class="tap-name">Отёк</div>
+        <div class="tap-btns" id="q-swell">
+          <button class="tap-btn" data-v="0">0</button>
+          <button class="tap-btn" data-v="3">3</button>
+          <button class="tap-btn" data-v="6">6</button>
+          <button class="tap-btn" data-v="10">10</button>
+        </div>
+      </div>
+    </div>
+    <div style="height:10px"></div>
+    <div style="font-size:10px;opacity:.45;letter-spacing:.06em;font-weight:500;text-transform:uppercase;margin-bottom:6px">Итог дня</div>
+    <div class="outcome-quick">
+      <button class="oq-btn" id="oq-good" onclick="setOutcome('good')">🌿 Хорошо</button>
+      <button class="oq-btn" id="oq-mid"  onclick="setOutcome('mid')">🌤 Средне</button>
+      <button class="oq-btn" id="oq-bad"  onclick="setOutcome('bad')">🔥 Плохо</button>
+    </div>
+  </div>
+
+  <div class="details-toggle">
+    <span class="dt-label">Подробности</span>
+    <button class="btn-sm" id="toggle-det" onclick="toggleDetails()">Развернуть +</button>
+  </div>
+
+  <div id="details-wrap" style="display:none">
+    <div class="section">
+      <div class="s-lbl">Триггеры</div>
+      <div class="card">
+        <div class="row-label">Стресс</div>
+        <div class="sl-row">
+          <input type="range" id="sl-stress" min="0" max="5" step="1" value="0" style="flex:1" oninput="document.getElementById('sv-stress').textContent=this.value">
+          <span id="sv-stress" class="sl-val">0</span>
+        </div>
+        <div class="sl-labels"><span>0 — нет</span><span>5 — очень высокий</span></div>
+        <div class="divider"></div>
+        <div class="row-label">Погода</div>
+        <div class="chips" id="ch-weather">
+          <div class="chip" data-v="жара">Жара</div>
+          <div class="chip" data-v="холод">Холод</div>
+          <div class="chip" data-v="сухой воздух">Сухой воздух</div>
+          <div class="chip" data-v="влажность">Влажность</div>
+          <div class="chip" data-v="ветер">Ветер</div>
+          <div class="chip" data-v="смена погоды">Смена погоды</div>
+        </div>
+        <div class="divider"></div>
+        <div class="row-label">Подозрительная еда</div>
+        <input type="text" id="food-in" placeholder="апельсин, яйца, орехи...">
+        <div class="divider"></div>
+        <div class="row-label">Другое</div>
+        <input type="text" id="other-in" placeholder="ткань, пыль, косметика...">
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="s-lbl">Лечение</div>
+      <div class="card">
+        <div class="row-label">Мазь / крем</div>
+        <input type="text" id="cream-in" placeholder="название и зона нанесения">
+        <div class="divider"></div>
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <span style="font-size:13px;color:var(--ink2)">Антигистаминные</span>
+          <div style="display:flex;gap:6px">
+            <div class="chip" id="anti-y" onclick="setAnti(true)">Да</div>
+            <div class="chip" id="anti-n" onclick="setAnti(false)">Нет</div>
+          </div>
+        </div>
+        <div class="divider"></div>
+        <div class="row-label">Уход сделан</div>
+        <div class="sl-row">
+          <input type="range" id="sl-care" min="0" max="5" step="1" value="3" style="flex:1" oninput="document.getElementById('sv-care').textContent=this.value">
+          <span id="sv-care" class="sl-val">3</span>
+        </div>
+        <div class="sl-labels"><span>0 — не делал</span><span>5 — всё выполнил</span></div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="s-lbl">Сон и самочувствие</div>
+      <div class="card">
+        <div class="row-label">Часов сна</div>
+        <div class="sl-row">
+          <input type="range" id="sl-sleep" min="3" max="12" step="0.5" value="7" style="flex:1" oninput="document.getElementById('sv-sleep').textContent=this.value">
+          <span id="sv-sleep" class="sl-val" style="min-width:36px">7</span>
+        </div>
+        <div class="sl-labels"><span>3ч</span><span>12ч</span></div>
+        <div class="divider"></div>
+        <div class="row-label">Общее самочувствие</div>
+        <div class="sl-row">
+          <input type="range" id="sl-feel" min="0" max="10" step="1" value="5" style="flex:1" oninput="document.getElementById('sv-feel').textContent=this.value">
+          <span id="sv-feel" class="sl-val">5</span>
+        </div>
+        <div class="sl-labels"><span>0 — ужасно</span><span>10 — отлично</span></div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="s-lbl">Заметки</div>
+      <textarea id="notes-in" rows="3" placeholder="Что особенного сегодня?"></textarea>
+    </div>
+  </div>
+
+  <button class="btn-primary" onclick="saveLog()">Сохранить запись дня</button>
+</div>
+
+<!-- ═══ STATS ═══ -->
+<div class="page" id="pg-stats">
+  <div class="hdr">
+    <h1>Статистика</h1>
+    <div class="hdr-sub">Последние 30 дней</div>
+  </div>
+  <div class="stat-grid" id="stat-grid"></div>
+  <div class="chart-wrap">
+    <div class="chart-card">
+      <div class="chart-title">Зуд — 14 дней</div>
+      <div class="bar-chart" id="chart-itch"></div>
+    </div>
+  </div>
+  <div class="chart-wrap">
+    <div class="chart-card">
+      <div class="chart-title">Распределение состояний</div>
+      <div class="donut-wrap" id="donut-wrap"></div>
+    </div>
+  </div>
+  <div class="chart-wrap">
+    <div class="chart-card">
+      <div class="chart-title">Частые триггеры</div>
+      <div id="trigger-list" style="display:flex;flex-direction:column;gap:8px"></div>
+    </div>
+  </div>
+  <div class="chart-wrap">
+    <div class="chart-card">
+      <div class="chart-title">Динамика симптомов — 30 дней</div>
+      <div class="chart-toggle-chips" id="symptom-toggle"></div>
+      <div class="line-chart-container">
+        <svg class="line-chart-svg" id="symptom-chart" viewBox="0 0 500 180"></svg>
+      </div>
+    </div>
+  </div>
+  <div class="chart-wrap">
+    <div class="chart-card">
+      <div class="chart-title">POEM — динамика по неделям</div>
+      <div class="line-chart-container">
+        <svg class="line-chart-svg" id="poem-chart" viewBox="0 0 500 180"></svg>
+      </div>
+    </div>
+  </div>
+  <div style="padding:0 16px;margin-bottom:10px"><div class="s-lbl">Инсайты</div></div>
+  <div id="insights-wrap"></div>
+</div>
+
+<!-- ═══ POEM ═══ -->
+<div class="page" id="pg-poem">
+  <div class="hdr">
+    <h1>POEM</h1>
+    <div class="hdr-sub">Опросник за последнюю неделю</div>
+  </div>
+
+  <div style="padding:0 16px;margin-bottom:10px">
+    <div class="poem-card">
+      <div class="poem-question">
+        <div class="pq-label">1. Зуд</div>
+        <div class="pq-options" id="poem-q1">
+          <div class="pq-option" data-v="0">Ни одного дня</div>
+          <div class="pq-option" data-v="1">1–2 дня</div>
+          <div class="pq-option" data-v="2">3–4 дня</div>
+          <div class="pq-option" data-v="3">5–6 дней</div>
+          <div class="pq-option" data-v="4">Каждый день</div>
+        </div>
+      </div>
+
+      <div class="poem-question">
+        <div class="pq-label">2. Нарушение сна из-за экземы</div>
+        <div class="pq-options" id="poem-q2">
+          <div class="pq-option" data-v="0">Ни одного дня</div>
+          <div class="pq-option" data-v="1">1–2 дня</div>
+          <div class="pq-option" data-v="2">3–4 дня</div>
+          <div class="pq-option" data-v="3">5–6 дней</div>
+          <div class="pq-option" data-v="4">Каждый день</div>
+        </div>
+      </div>
+
+      <div class="poem-question">
+        <div class="pq-label">3. Кровоточивость кожи</div>
+        <div class="pq-options" id="poem-q3">
+          <div class="pq-option" data-v="0">Ни одного дня</div>
+          <div class="pq-option" data-v="1">1–2 дня</div>
+          <div class="pq-option" data-v="2">3–4 дня</div>
+          <div class="pq-option" data-v="3">5–6 дней</div>
+          <div class="pq-option" data-v="4">Каждый день</div>
+        </div>
+      </div>
+
+      <div class="poem-question">
+        <div class="pq-label">4. Мокнутие / выделение жидкости</div>
+        <div class="pq-options" id="poem-q4">
+          <div class="pq-option" data-v="0">Ни одного дня</div>
+          <div class="pq-option" data-v="1">1–2 дня</div>
+          <div class="pq-option" data-v="2">3–4 дня</div>
+          <div class="pq-option" data-v="3">5–6 дней</div>
+          <div class="pq-option" data-v="4">Каждый день</div>
+        </div>
+      </div>
+
+      <div class="poem-question">
+        <div class="pq-label">5. Растрескивание кожи</div>
+        <div class="pq-options" id="poem-q5">
+          <div class="pq-option" data-v="0">Ни одного дня</div>
+          <div class="pq-option" data-v="1">1–2 дня</div>
+          <div class="pq-option" data-v="2">3–4 дня</div>
+          <div class="pq-option" data-v="3">5–6 дней</div>
+          <div class="pq-option" data-v="4">Каждый день</div>
+        </div>
+      </div>
+
+      <div class="poem-question">
+        <div class="pq-label">6. Шелушение</div>
+        <div class="pq-options" id="poem-q6">
+          <div class="pq-option" data-v="0">Ни одного дня</div>
+          <div class="pq-option" data-v="1">1–2 дня</div>
+          <div class="pq-option" data-v="2">3–4 дня</div>
+          <div class="pq-option" data-v="3">5–6 дней</div>
+          <div class="pq-option" data-v="4">Каждый день</div>
+        </div>
+      </div>
+
+      <div class="poem-question">
+        <div class="pq-label">7. Сухость / шершавость</div>
+        <div class="pq-options" id="poem-q7">
+          <div class="pq-option" data-v="0">Ни одного дня</div>
+          <div class="pq-option" data-v="1">1–2 дня</div>
+          <div class="pq-option" data-v="2">3–4 дня</div>
+          <div class="pq-option" data-v="3">5–6 дней</div>
+          <div class="pq-option" data-v="4">Каждый день</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <button class="btn-primary" onclick="savePoem()">Сохранить результат</button>
+
+  <div style="padding:0 16px;margin-bottom:10px">
+    <div class="poem-card">
+      <div class="poem-history">
+        <div style="font-size:12px;font-weight:500;color:var(--ink2);margin-bottom:12px">История результатов</div>
+        <div id="poem-history-list" style="display:flex;flex-direction:column;gap:8px"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ JOURNAL ═══ -->
+<div class="page" id="pg-journal">
+  <div class="hdr">
+    <div class="hdr-row">
+      <h1>Дневник</h1>
+      <button class="btn-sm" onclick="exportCSV()">CSV ↓</button>
+    </div>
+    <div class="hdr-sub" id="jcount"></div>
+  </div>
+  <div style="padding:0 16px;margin-bottom:10px">
+    <div class="cal-card">
+      <div class="cal-nav">
+        <button class="cal-arr" onclick="calShift(-1)">‹</button>
+        <span class="cal-month" id="cal-lbl"></span>
+        <button class="cal-arr" onclick="calShift(1)">›</button>
+      </div>
+      <div class="cal-g" id="cal-heads"></div>
+      <div style="height:4px"></div>
+      <div class="cal-g" id="cal-cells"></div>
+      <div style="height:12px"></div>
+      <div style="display:flex;justify-content:center;gap:14px;font-size:11px;font-weight:500">
+        <span style="color:var(--sage)">● Хорошо</span>
+        <span style="color:var(--amber)">● Средне</span>
+        <span style="color:var(--rose)">● Плохо</span>
+      </div>
+    </div>
+  </div>
+  <div style="padding:0 16px;margin-bottom:8px"><div class="s-lbl">Записи</div></div>
+  <div id="hist-list"></div>
+</div>
+
+<!-- ═══ SETTINGS ═══ -->
+<div class="page" id="pg-settings">
+  <div class="hdr"><h1>Настройки</h1></div>
+  <div style="padding:0 16px;margin-bottom:20px">
+    <div class="ss-title" style="margin-bottom:8px">Напоминания</div>
+    <div class="ss-card">
+      <div class="ss-row">
+        <div><div class="ss-lbl">Вечернее напоминание</div><div class="ss-sub">Заполнить дневник</div></div>
+        <button class="toggle" id="tog-remind" onclick="toggleReminder()"></button>
+      </div>
+      <div class="ss-row" id="time-row" style="display:none">
+        <div class="ss-lbl">Время</div>
+        <input type="time" id="remind-time" value="21:00" onchange="saveSettings()">
+      </div>
+    </div>
+    <div style="font-size:11px;color:var(--ink3);margin-top:6px;line-height:1.6">Работает через браузерные уведомления. При включении браузер запросит разрешение.</div>
+  </div>
+  <div style="padding:0 16px;margin-bottom:20px">
+    <div class="ss-title" style="margin-bottom:8px">Данные</div>
+    <div class="ss-card">
+      <div class="ss-row" style="cursor:pointer" onclick="exportCSV()">
+        <div><div class="ss-lbl">Экспорт в CSV</div><div class="ss-sub">Для врача или анализа в Excel</div></div>
+        <span style="color:var(--ink3);font-size:18px">›</span>
+      </div>
+      <div class="ss-row" style="cursor:pointer" onclick="confirmClear()">
+        <div><div class="ss-lbl" style="color:var(--rose)">Очистить все данные</div><div class="ss-sub">Удалить все записи дневника</div></div>
+        <span style="color:var(--ink3);font-size:18px">›</span>
+      </div>
+    </div>
+  </div>
+  <div style="padding:0 16px;margin-bottom:20px">
+    <div class="ss-title" style="margin-bottom:8px">О приложении</div>
+    <div class="ss-card">
+      <div class="ss-row"><div class="ss-lbl">Версия</div><span style="font-size:13px;color:var(--ink3)">3.0</span></div>
+      <div class="ss-row"><div><div class="ss-lbl">Добавить на главный экран</div><div class="ss-sub">В браузере: Поделиться → На экран «Домой»</div></div></div>
+    </div>
+    <div style="font-size:11px;color:var(--ink3);margin-top:6px;line-height:1.6">Все данные хранятся только на вашем устройстве. Никуда не передаются.</div>
+  </div>
+</div>
+
+<!-- ═══ NAV ═══ -->
+<nav class="nav">
+  <button class="nb on" id="nb-log" onclick="showPage('log')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 20h9M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+    Запись<span class="dot"></span>
+  </button>
+  <button class="nb" id="nb-stats" onclick="showPage('stats')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M18 20V10M12 20V4M6 20v-6"/></svg>
+    Статистика<span class="dot"></span>
+  </button>
+  <button class="nb" id="nb-poem" onclick="showPage('poem')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M6 4h12a2 2 0 012 2v12a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2z"/><path d="M9 9h6M9 13h6M9 17h3"/></svg>
+    POEM<span class="dot"></span>
+  </button>
+  <button class="nb" id="nb-journal" onclick="showPage('journal')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+    Дневник<span class="dot"></span>
+  </button>
+  <button class="nb" id="nb-settings" onclick="showPage('settings')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+    Настройки<span class="dot"></span>
+  </button>
+</nav>
+
+<script>
+const SK='dermtrack2',SS='dermtrack_s',PSK='dermtrack_poem';
+let DB={},POEM={},outcome=null,antiVal=null,calOff=0,notifyTmr=null,detOpen=false;
+let symptomToggleState={itch:true,red:true,dry:true,swell:true};
+
+function loadDB(){try{DB=JSON.parse(localStorage.getItem(SK)||'{}')}catch(e){DB={}}}
+function saveDB(){localStorage.setItem(SK,JSON.stringify(DB))}
+function loadPoem(){try{POEM=JSON.parse(localStorage.getItem(PSK)||'{}')}catch(e){POEM={}}}
+function savePoem_(){localStorage.setItem(PSK,JSON.stringify(POEM))}
+function todayKey(){return new Date().toISOString().split('T')[0]}
+function getWeekKey(date){
+  const d=new Date(date);
+  const w=Math.ceil((d.getDate()-d.getDay()+1)/7);
+  return `${d.getFullYear()}-W${String(w).padStart(2,'0')}`;
+}
+function getS(){try{return JSON.parse(localStorage.getItem(SS)||'{}')}catch(e){return{}}}
+function putS(s){localStorage.setItem(SS,JSON.stringify(s))}
+
+const MONTHS_RU=['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря'];
+const MONTHS_NOM=['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
+const DW=['вс','пн','вт','ср','чт','пт','сб'];
+function fmtKey(k){
+  const[y,m,d]=k.split('-');
+  const dt=new Date(+y,+m-1,+d);
+  return `${+d} ${MONTHS_RU[+m-1]}, ${DW[dt.getDay()]}`;
+}
+
+// ── page ───────────────────────────────────────
+function showPage(n){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('on'));
+  document.querySelectorAll('.nb').forEach(b=>b.classList.remove('on'));
+  document.getElementById('pg-'+n).classList.add('on');
+  document.getElementById('nb-'+n).classList.add('on');
+  if(n==='stats'){renderStats();renderSymptomChart();renderPoemChart();}
+  if(n==='journal')renderJournal();
+  if(n==='poem')renderPoemHistory();
+  if(n==='settings')loadSettings();
+}
+
+// ── tooltip ────────────────────────────────────
+function toggleTooltip(e){
+  e.preventDefault();
+  const tt=document.getElementById('quick-tooltip');
+  tt.classList.toggle('show');
+}
+
+// ── tap groups ─────────────────────────────────
+function initTap(id){
+  document.querySelectorAll('#'+id+' .tap-btn').forEach(b=>{
+    b.addEventListener('click',()=>{
+      document.querySelectorAll('#'+id+' .tap-btn').forEach(x=>x.classList.remove('sel'));
+      b.classList.add('sel');
+    });
+  });
+}
+function getTap(id){const s=document.querySelector('#'+id+' .tap-btn.sel');return s?+s.dataset.v:null}
+function setTap(id,val){
+  document.querySelectorAll('#'+id+' .tap-btn').forEach(b=>{
+    b.classList.toggle('sel',+b.dataset.v===val);
+  });
+}
+
+// ── POEM radio options ─────────────────────────
+function initPoemOptions(){
+  for(let i=1;i<=7;i++){
+    document.querySelectorAll(`#poem-q${i} .pq-option`).forEach(opt=>{
+      opt.addEventListener('click',()=>{
+        document.querySelectorAll(`#poem-q${i} .pq-option`).forEach(x=>x.classList.remove('sel'));
+        opt.classList.add('sel');
+      });
+    });
+  }
+}
+function getPoemValue(qNum){
+  const sel=document.querySelector(`#poem-q${qNum} .pq-option.sel`);
+  return sel?+sel.dataset.v:null;
+}
+function setPoemValue(qNum,val){
+  document.querySelectorAll(`#poem-q${qNum} .pq-option`).forEach(opt=>{
+    opt.classList.toggle('sel',+opt.dataset.v===val);
+  });
+}
+
+// ── chips ──────────────────────────────────────
+function initChips(id){
+  document.querySelectorAll('#'+id+' .chip').forEach(c=>{
+    c.addEventListener('click',()=>c.classList.toggle('on'));
+  });
+}
+function getChips(id){return Array.from(document.querySelectorAll('#'+id+' .chip.on')).map(c=>c.dataset.v)}
+function setChips(id,vals){
+  document.querySelectorAll('#'+id+' .chip').forEach(c=>{
+    c.classList.toggle('on',vals&&vals.includes(c.dataset.v));
+  });
+}
+
+// ── outcome / anti ─────────────────────────────
+function setOutcome(v){
+  outcome=v;
+  ['good','mid','bad'].forEach(x=>document.getElementById('oq-'+x).className='oq-btn');
+  document.getElementById('oq-'+v).classList.add('sel-'+v);
+}
+function setAnti(v){
+  antiVal=v;
+  document.getElementById('anti-y').classList.toggle('on',v===true);
+  document.getElementById('anti-n').classList.toggle('on',v===false);
+}
+
+// ── details toggle ─────────────────────────────
+function toggleDetails(){
+  detOpen=!detOpen;
+  document.getElementById('details-wrap').style.display=detOpen?'block':'none';
+  document.getElementById('toggle-det').textContent=detOpen?'Свернуть −':'Развернуть +';
+}
+
+// ── save log ───────────────────────────────────
+function saveLog(){
+  const itch=getTap('q-itch'),red=getTap('q-red'),dry=getTap('q-dry'),swell=getTap('q-swell');
+  if((itch===null||itch===undefined)&&(red===null||red===undefined)&&(dry===null||dry===undefined)&&(swell===null||swell===undefined)){
+    toast('Выбери хотя бы один симптом');return;
+  }
+  if(!outcome){
+    toast('Выбери итог дня');return;
+  }
+  const entry={
+    itch,red,dry,swell,outcome,
+    stress:+document.getElementById('sl-stress').value,
+    weather:getChips('ch-weather'),
+    food:document.getElementById('food-in').value.trim(),
+    other:document.getElementById('other-in').value.trim(),
+    cream:document.getElementById('cream-in').value.trim(),
+    anti:antiVal,
+    care:+document.getElementById('sl-care').value,
+    sleep:+document.getElementById('sl-sleep').value,
+    feel:+document.getElementById('sl-feel').value,
+    notes:document.getElementById('notes-in').value.trim(),
+    ts:Date.now()
+  };
+  DB[todayKey()]=entry;saveDB();updateStreak();toast('Запись сохранена ✓');
+}
+
+// ── save POEM ──────────────────────────────────
+function savePoem(){
+  const vals=[1,2,3,4,5,6,7].map(i=>getPoemValue(i));
+  if(vals.includes(null)){toast('Ответь на все вопросы');return;}
+  const score=vals.reduce((a,b)=>a+b,0);
+  const weekKey=getWeekKey(new Date());
+  POEM[weekKey]={score,ts:Date.now()};
+  savePoem_();
+  toast(`POEM сохранен • ${score} баллов`);
+  renderPoemHistory();
+}
+
+function getInterpretation(score){
+  if(score<=2)return{text:'Чисто / почти чисто',cls:'clean'};
+  if(score<=7)return{text:'Лёгкая степень',cls:'light'};
+  if(score<=16)return{text:'Средняя степень',cls:'moderate'};
+  if(score<=24)return{text:'Тяжёлая степень',cls:'severe'};
+  return{text:'Очень тяжёлая степень',cls:'very-severe'};
+}
+
+function renderPoemHistory(){
+  const keys=Object.keys(POEM).sort().reverse();
+  const list=document.getElementById('poem-history-list');
+  if(!keys.length){
+    list.innerHTML='<div style="font-size:12px;color:var(--ink3);text-align:center;padding:16px">Нет результатов</div>';
+    return;
+  }
+  list.innerHTML=keys.map(k=>{
+    const score=POEM[k].score;
+    const interp=getInterpretation(score);
+    return `<div class="poem-hist-item">
+      <div>
+        <div class="phi-date">${k}</div>
+        <span class="poem-badge ${interp.cls}">${interp.text}</span>
+      </div>
+      <div class="phi-score">${score}</div>
+    </div>`;
+  }).join('');
+}
+
+// ── streak ─────────────────────────────────────
+function updateStreak(){
+  let s=0;const d=new Date();
+  while(true){
+    const k=d.toISOString().split('T')[0];
+    if(!DB[k])break;s++;d.setDate(d.getDate()-1);
+  }
+  document.getElementById('streak-badge').textContent=s>1?`🔥 ${s} дней подряд`:'';
+}
+
+// ── prefill ────────────────────────────────────
+function prefill(){
+  const e=DB[todayKey()];if(!e)return;
+  if(e.itch!=null)setTap('q-itch',e.itch);
+  if(e.red!=null)setTap('q-red',e.red);
+  if(e.dry!=null)setTap('q-dry',e.dry);
+  if(e.swell!=null)setTap('q-swell',e.swell);
+  if(e.outcome)setOutcome(e.outcome);
+  if(e.stress!=null){document.getElementById('sl-stress').value=e.stress;document.getElementById('sv-stress').textContent=e.stress;}
+  if(e.care!=null){document.getElementById('sl-care').value=e.care;document.getElementById('sv-care').textContent=e.care;}
+  if(e.sleep!=null){document.getElementById('sl-sleep').value=e.sleep;document.getElementById('sv-sleep').textContent=e.sleep;}
+  if(e.feel!=null){document.getElementById('sl-feel').value=e.feel;document.getElementById('sv-feel').textContent=e.feel;}
+  if(e.weather)setChips('ch-weather',e.weather);
+  if(e.anti!=null)setAnti(e.anti);
+  document.getElementById('food-in').value=e.food||'';
+  document.getElementById('other-in').value=e.other||'';
+  document.getElementById('cream-in').value=e.cream||'';
+  document.getElementById('notes-in').value=e.notes||'';
+}
+
+// ── STATS ──────────────────────────────────────
+function renderStats(){
+  const keys=Object.keys(DB).sort().reverse().slice(0,30);
+  const entries=keys.map(k=>DB[k]);
+  if(!entries.length){
+    document.getElementById('stat-grid').innerHTML='<div class="empty" style="grid-column:1/-1"><div class="empty-ico">📊</div>Добавь несколько записей,<br>чтобы увидеть статистику</div>';
+    ['chart-itch','donut-wrap','trigger-list'].forEach(id=>document.getElementById(id).innerHTML='');
+    return;
+  }
+  function avg(arr){const v=arr.filter(x=>x!=null&&!isNaN(x));return v.length?v.reduce((a,b)=>a+b,0)/v.length:null}
+  const oc={good:0,mid:0,bad:0};
+  entries.forEach(e=>{if(e.outcome)oc[e.outcome]++;});
+  const ai=avg(entries.map(e=>e.itch));
+  const as=avg(entries.map(e=>e.sleep));
+  const icls=ai==null?'':ai<=3?'sage':ai<=6?'amber':'rose';
+  document.getElementById('stat-grid').innerHTML=`
+    <div class="stat-card"><div class="stat-lbl">Ср. зуд</div><div class="stat-val ${icls}">${ai!=null?ai.toFixed(1):'—'}</div><div class="stat-sub">из 10</div></div>
+    <div class="stat-card"><div class="stat-lbl">Ср. сон</div><div class="stat-val">${as!=null?as.toFixed(1):'—'}</div><div class="stat-sub">часов</div></div>
+    <div class="stat-card"><div class="stat-lbl">Ремиссия</div><div class="stat-val sage">${oc.good}</div><div class="stat-sub">дней</div></div>
+    <div class="stat-card"><div class="stat-lbl">Обострений</div><div class="stat-val ${oc.bad>0?'rose':''}">${oc.bad}</div><div class="stat-sub">дней</div></div>`;
+
+  const last14=Object.keys(DB).sort().slice(-14);
+  const ci=document.getElementById('chart-itch');
+  ci.innerHTML='';
+  last14.forEach(k=>{
+    const v=DB[k].itch??0;
+    const h=Math.round((v/10)*80);
+    const col=v<=3?'var(--sage)':v<=6?'var(--amber)':'var(--rose)';
+    ci.innerHTML+=`<div class="bc-col"><div class="bc-bar" style="height:${h}px;background:${col}"></div><span class="bc-lbl">${new Date(k).getDate()}</span></div>`;
+  });
+  if(!last14.length)ci.innerHTML='<div style="font-size:12px;color:var(--ink3);text-align:center;width:100%">Нет данных</div>';
+
+  const total=oc.good+oc.mid+oc.bad;
+  const dw=document.getElementById('donut-wrap');
+  if(!total){dw.innerHTML='<div style="font-size:12px;color:var(--ink3)">Нет данных об итогах дней</div>';}
+  else{
+    const R=40,cx=48,cy=48,C=2*Math.PI*R;
+    const pG=oc.good/total,pM=oc.mid/total;
+    const dG=pG*C,dM=pM*C,dB=(1-pG-pM)*C;
+    dw.innerHTML=`
+      <svg width="96" height="96" viewBox="0 0 96 96" style="flex-shrink:0">
+        <circle cx="${cx}" cy="${cy}" r="${R}" fill="none" stroke="var(--cream2)" stroke-width="14"/>
+        ${oc.good?`<circle cx="${cx}" cy="${cy}" r="${R}" fill="none" stroke="var(--sage)" stroke-width="14" stroke-dasharray="${dG} ${C-dG}" stroke-dashoffset="0" transform="rotate(-90 ${cx} ${cy})"/>`:''}
+        ${oc.mid?`<circle cx="${cx}" cy="${cy}" r="${R}" fill="none" stroke="var(--amber)" stroke-width="14" stroke-dasharray="${dM} ${C-dM}" stroke-dashoffset="${-dG}" transform="rotate(-90 ${cx} ${cy})"/>`:''}
+        ${oc.bad?`<circle cx="${cx}" cy="${cy}" r="${R}" fill="none" stroke="var(--rose)" stroke-width="14" stroke-dasharray="${dB} ${C-dB}" stroke-dashoffset="${-(dG+dM)}" transform="rotate(-90 ${cx} ${cy})"/>`:''}
+        <text x="${cx}" y="${cy}" text-anchor="middle" dy=".35em" font-size="14" font-family="DM Serif Display,serif" fill="var(--ink)">${total}</text>
+      </svg>
+      <div class="donut-legend">
+        <div class="dl-row"><div class="dl-dot" style="background:var(--sage)"></div><span class="dl-lbl">Хорошо</span><span class="dl-val">${oc.good} (${Math.round(pG*100)}%)</span></div>
+        <div class="dl-row"><div class="dl-dot" style="background:var(--amber)"></div><span class="dl-lbl">Средне</span><span class="dl-val">${oc.mid} (${Math.round(pM*100)}%)</span></div>
+        <div class="dl-row"><div class="dl-dot" style="background:var(--rose)"></div><span class="dl-lbl">Обострение</span><span class="dl-val">${oc.bad} (${Math.round((1-pG-pM)*100)}%)</span></div>
+      </div>`;
+  }
+
+  const tc={};
+  entries.forEach(e=>{
+    (e.weather||[]).forEach(w=>{tc[w]=(tc[w]||0)+1;});
+    (e.food||'').split(',').forEach(f=>{const t=f.trim().toLowerCase();if(t)tc[t]=(tc[t]||0)+1;});
+    if(e.other){const t=e.other.trim().toLowerCase();if(t)tc[t]=(tc[t]||0)+1;}
+  });
+  const sorted=Object.entries(tc).sort((a,b)=>b[1]-a[1]).slice(0,7);
+  const tl=document.getElementById('trigger-list');
+  if(!sorted.length){tl.innerHTML='<div style="font-size:12px;color:var(--ink3)">Нет данных о триггерах</div>';return;}
+  const mx=sorted[0][1];
+  tl.innerHTML=sorted.map(([name,cnt])=>`
+    <div class="trig-row">
+      <span class="trig-name">${name}</span>
+      <div class="trig-bar-bg"><div class="trig-bar" style="width:${Math.round(cnt/mx*100)}%"></div></div>
+      <span class="trig-n">${cnt}×</span>
+    </div>`).join('');
+
+  const iw=document.getElementById('insights-wrap');
+  const ins=buildInsights(entries);
+  iw.innerHTML=ins.length?ins.map(i=>`
+    <div class="insight">
+      <div class="ins-icon" style="background:var(--${i.col}-l)">${i.icon}</div>
+      <div><div class="ins-title">${i.title}</div><div class="ins-text">${i.text}</div></div>
+    </div>`).join(''):'<div class="insight"><div class="ins-text" style="color:var(--ink3)">Инсайты появятся после 5+ дней наблюдений</div></div>';
+}
+
+function buildInsights(entries){
+  const out=[];
+  if(entries.length<3)return out;
+  function avg(arr){const v=arr.filter(x=>x!=null&&!isNaN(x));return v.length?v.reduce((a,b)=>a+b,0)/v.length:null}
+
+  const sb=entries.filter(e=>e.stress>=4&&e.outcome==='bad').length;
+  const sa=entries.filter(e=>e.stress>=4).length;
+  if(sa>=2&&sb/sa>.5)out.push({icon:'🧠',col:'rose',title:'Стресс — твой триггер',text:`При стрессе 4+ обострение случалось в ${sb} из ${sa} раз (${Math.round(sb/sa*100)}%). Стоит работать над управлением стрессом.`});
+
+  const sg=entries.filter(e=>e.sleep>=7&&e.outcome==='good').length;
+  const ss=entries.filter(e=>e.sleep>=7).length;
+  if(ss>=3&&sg/ss>.55)out.push({icon:'😴',col:'sage',title:'Сон — твой союзник',text:`При 7+ часах сна ремиссия наступала в ${sg} из ${ss} раз. Сон значимо влияет на состояние кожи.`});
+
+  const l7=entries.slice(0,7).map(e=>e.itch).filter(x=>x!=null);
+  const p7=entries.slice(7,14).map(e=>e.itch).filter(x=>x!=null);
+  if(l7.length>=3&&p7.length>=3){
+    const n=avg(l7),p=avg(p7);
+    if(n<p-1)out.push({icon:'📉',col:'sage',title:'Зуд снижается',text:`За последние 7 дней средний зуд ${n.toFixed(1)} против ${p.toFixed(1)} неделей ранее. Положительная динамика!`});
+    else if(n>p+1)out.push({icon:'📈',col:'amber',title:'Зуд нарастает',text:`Средний зуд вырос с ${p.toFixed(1)} до ${n.toFixed(1)}. Проанализируй, что изменилось на этой неделе.`});
+  }
+  const lc=entries.filter(e=>(e.care??5)<=2&&e.outcome==='bad').length;
+  if(lc>=2)out.push({icon:'💆',col:'sky',title:'Уход важен',text:`${lc} обострения совпали с низкими оценками ухода (≤2). Регулярный уход важен даже в хорошие дни.`});
+  return out;
+}
+
+// ── SYMPTOM CHART ──────────────────────────────
+function renderSymptomChart(){
+  const keys=Object.keys(DB).sort().reverse().slice(0,30).reverse();
+  const colors={itch:'var(--rose)',red:'var(--amber)',dry:'var(--sky)',swell:'var(--ink3)'};
+  const labels={itch:'Зуд',red:'Краснота',dry:'Сухость',swell:'Отёк'};
+
+  let toggleHtml='';
+  Object.keys(colors).forEach(k=>{
+    const on=symptomToggleState[k]?'on':'';
+    toggleHtml+=`<div class="ctc ${on}" onclick="toggleSymptom('${k}')">${labels[k]}</div>`;
+  });
+  document.getElementById('symptom-toggle').innerHTML=toggleHtml;
+
+  if(!keys.length){
+    document.getElementById('symptom-chart').innerHTML='<text x="250" y="90" text-anchor="middle" fill="var(--ink3)" font-size="14">Нет данных</text>';
+    return;
+  }
+
+  const W=500,H=180,mL=40,mR=10,mT=20,mB=30;
+  const gW=W-mL-mR,gH=H-mT-mB;
+  const maxVal=10;
+  const daysCount=keys.length;
+  const xStep=gW/(daysCount-1||1);
+
+  let svg='<defs><style>text{font-family:DM Sans,sans-serif;font-size:11px}</style></defs>';
+
+  // Grid lines
+  for(let i=0;i<=10;i+=2){
+    const y=mT+gH-(i/maxVal)*gH;
+    svg+=`<line x1="${mL}" x2="${W-mR}" y1="${y}" y2="${y}" stroke="var(--cream2)" stroke-width="1"/>`;
+    svg+=`<text x="${mL-8}" y="${y+4}" text-anchor="end" fill="var(--ink3)">${i}</text>`;
+  }
+
+  // X axis dates
+  keys.forEach((k,idx)=>{
+    const x=mL+idx*xStep;
+    svg+=`<line x1="${x}" x2="${x}" y1="${mT+gH}" y2="${mT+gH+4}" stroke="var(--ink3)"/>`;
+    if(idx%5===0||idx===keys.length-1){
+      const d=new Date(k);
+      svg+=`<text x="${x}" y="${H-8}" text-anchor="middle" fill="var(--ink3)">${d.getDate()}</text>`;
+    }
+  });
+
+  // Lines and dots
+  ['itch','red','dry','swell'].forEach(sym=>{
+    if(!symptomToggleState[sym])return;
+    const points=keys.map((k,idx)=>{
+      const v=DB[k][sym];
+      if(v==null)return null;
+      const x=mL+idx*xStep;
+      const y=mT+gH-(v/maxVal)*gH;
+      return [x,y];
+    }).filter(p=>p);
+
+    if(points.length>1){
+      const d=points.map((p,i)=>i===0?`M${p[0]},${p[1]}`:`L${p[0]},${p[1]}`).join('');
+      svg+=`<path d="${d}" fill="none" stroke="${colors[sym]}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>`;
+    }
+
+    points.forEach(p=>{
+      svg+=`<circle cx="${p[0]}" cy="${p[1]}" r="3" fill="${colors[sym]}"/>`;
+    });
+  });
+
+  document.getElementById('symptom-chart').innerHTML=svg;
+}
+
+function toggleSymptom(sym){
+  symptomToggleState[sym]=!symptomToggleState[sym];
+  renderSymptomChart();
+}
+
+// ── POEM CHART ─────────────────────────────────
+function renderPoemChart(){
+  const keys=Object.keys(POEM).sort();
+  const W=500,H=180,mL=40,mR=10,mT=20,mB=30;
+  const gW=W-mL-mR,gH=H-mT-mB;
+
+  if(keys.length<2){
+    document.getElementById('poem-chart').innerHTML='<text x="250" y="90" text-anchor="middle" fill="var(--ink3)" font-size="12">Заполни POEM 2+ раз для графика</text>';
+    return;
+  }
+
+  let svg='<defs><style>text{font-family:DM Sans,sans-serif;font-size:11px}</style></defs>';
+
+  // Background zones
+  const bands=[
+    {max:2,color:'#e8f0e9'},
+    {max:7,color:'#e5f0f8'},
+    {max:16,color:'#fdf0e3'},
+    {max:24,color:'#fbe8ec'},
+    {max:28,color:'#fce4ec'}
+  ];
+  let prevY=mT;
+  bands.forEach(b=>{
+    const y=mT+gH-(b.max/28)*gH;
+    svg+=`<rect x="${mL}" y="${y}" width="${gW}" height="${prevY-y}" fill="${b.color}" opacity="0.5"/>`;
+    prevY=y;
+  });
+
+  // Y axis labels
+  for(let i=0;i<=28;i+=7){
+    const y=mT+gH-(i/28)*gH;
+    svg+=`<line x1="${mL}" x2="${W-mR}" y1="${y}" y2="${y}" stroke="var(--cream2)" stroke-width="1"/>`;
+    svg+=`<text x="${mL-8}" y="${y+4}" text-anchor="end" fill="var(--ink3)">${i}</text>`;
+  }
+
+  // Data points and line
+  const scores=keys.map(k=>POEM[k].score);
+  const maxScore=Math.max(...scores);
+  const xStep=gW/(keys.length-1||1);
+
+  const points=keys.map((k,idx)=>{
+    const score=POEM[k].score;
+    const x=mL+idx*xStep;
+    const y=mT+gH-(score/28)*gH;
+    return {x,y,score,k};
+  });
+
+  if(points.length>1){
+    const d=points.map((p,i)=>i===0?`M${p.x},${p.y}`:`L${p.x},${p.y}`).join('');
+    svg+=`<path d="${d}" fill="none" stroke="var(--ink)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>`;
+  }
+
+  // Dots with color
+  points.forEach(p=>{
+    const interp=getInterpretation(p.score);
+    let dotCol='var(--sage)';
+    if(interp.cls==='light')dotCol='var(--sky)';
+    else if(interp.cls==='moderate')dotCol='var(--amber)';
+    else if(interp.cls==='severe'||interp.cls==='very-severe')dotCol='var(--rose)';
+    svg+=`<circle cx="${p.x}" cy="${p.y}" r="4" fill="${dotCol}"/>`;
+  });
+
+  // X axis labels
+  keys.forEach((k,idx)=>{
+    const x=mL+idx*xStep;
+    if(idx%Math.max(1,Math.floor(keys.length/5))===0||idx===keys.length-1){
+      svg+=`<text x="${x}" y="${H-8}" text-anchor="middle" fill="var(--ink3)">${k}</text>`;
+    }
+  });
+
+  document.getElementById('poem-chart').innerHTML=svg;
+}
+
+// ── JOURNAL / CALENDAR ─────────────────────────
+function renderJournal(){
+  const now=new Date();
+  const dt=new Date(now.getFullYear(),now.getMonth()+calOff,1);
+  document.getElementById('cal-lbl').textContent=`${MONTHS_NOM[dt.getMonth()]} ${dt.getFullYear()}`;
+  document.getElementById('cal-heads').innerHTML=['Пн','Вт','Ср','Чт','Пт','Сб','Вс'].map(d=>`<div class="cg-h">${d}</div>`).join('');
+  let dow=dt.getDay();dow=dow===0?6:dow-1;
+  const dim=new Date(dt.getFullYear(),dt.getMonth()+1,0).getDate();
+  const todayStr=new Date().toISOString().split('T')[0];
+  let html='';
+  for(let i=0;i<dow;i++)html+='<div class="cg-d empty"></div>';
+  for(let d=1;d<=dim;d++){
+    const key=`${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const e=DB[key];
+    let cls='cg-d'+(e?' has':' ');
+    if(e?.outcome==='good')cls+=' good';
+    else if(e?.outcome==='mid')cls+=' mid';
+    else if(e?.outcome==='bad')cls+=' bad';
+    if(key===todayStr)cls+=' today';
+    html+=`<div class="${cls}" onclick="openEntry('${key}')">${d}</div>`;
+  }
+  document.getElementById('cal-cells').innerHTML=html;
+  const allKeys=Object.keys(DB).sort().reverse();
+  document.getElementById('jcount').textContent=`${allKeys.length} записей`;
+  const hl=document.getElementById('hist-list');
+  if(!allKeys.length){hl.innerHTML='<div class="empty"><div class="empty-ico">📖</div>Записей пока нет</div>';return;}
+  hl.innerHTML=allKeys.map(k=>{
+    const e=DB[k];
+    const bc=e.outcome==='good'?'good':e.outcome==='mid'?'mid':e.outcome==='bad'?'bad':'';
+    const bl=e.outcome==='good'?'🌿 Хорошо':e.outcome==='mid'?'🌤 Средне':e.outcome==='bad'?'🔥 Плохо':'';
+    const pills=[e.itch!=null&&`Зуд ${e.itch}`,e.red!=null&&`Краснота ${e.red}`,e.stress>0&&`Стресс ${e.stress}`].filter(Boolean);
+    return `<div class="hist-item" onclick="openEntry('${k}')">
+      <div class="hi-top"><span class="hi-date">${fmtKey(k)}</span>${bl?`<span class="hi-badge ${bc}">${bl}</span>`:''}</div>
+      <div class="hi-pills">${pills.map(p=>`<span class="hi-pill">${p}</span>`).join('')}</div>
+    </div>`;
+  }).join('');
+}
+function calShift(d){calOff+=d;renderJournal();}
+
+// ── MODAL ──────────────────────────────────────
+function openEntry(key){
+  const e=DB[key];if(!e)return;
+  document.getElementById('m-title').textContent=fmtKey(key);
+  const rows=[
+    ['Зуд',e.itch],['Краснота',e.red],['Сухость',e.dry],['Отёк',e.swell],
+    ['Стресс',e.stress!=null?`${e.stress}/5`:null],
+    ['Сон',e.sleep!=null?`${e.sleep} ч`:null],
+    ['Самочувствие',e.feel!=null?`${e.feel}/10`:null],
+    ['Уход',e.care!=null?`${e.care}/5`:null],
+    ['Антигист.',e.anti===true?'Да':e.anti===false?'Нет':null],
+    ['Погода',e.weather?.length?e.weather.join(', '):null],
+    ['Еда',e.food||null],['Триггер',e.other||null],
+    ['Мазь',e.cream||null],['Заметки',e.notes||null],
+  ].filter(r=>r[1]!=null&&r[1]!=='');
+  document.getElementById('m-body').innerHTML=rows.map(([k,v])=>`
+    <div class="modal-row"><span class="mr-k">${k}</span><span class="mr-v">${v}</span></div>`).join('');
+  document.getElementById('overlay').classList.add('on');
+}
+function closeModal(){document.getElementById('overlay').classList.remove('on');}
+document.getElementById('overlay').addEventListener('click',e=>{if(e.target.id==='overlay')closeModal();});
+
+// ── EXPORT ────────────────────────────────────
+function exportCSV(){
+  const h=['Дата','Зуд','Краснота','Сухость','Отёк','Итог','Стресс','Погода','Еда','Триггер','Мазь','Антигист','Уход','Сон','Самочувствие','Заметки','POEM'];
+  const rows=Object.keys(DB).sort().map(k=>{
+    const e=DB[k];
+    const weekKey=getWeekKey(new Date(k));
+    const poemScore=POEM[weekKey]?.score??'';
+    return [k,e.itch??'',e.red??'',e.dry??'',e.swell??'',e.outcome??'',e.stress??'',
+      (e.weather||[]).join(';'),e.food||'',e.other||'',e.cream||'',
+      e.anti===true?'Да':e.anti===false?'Нет':'',e.care??'',e.sleep??'',e.feel??'',
+      (e.notes||'').replace(/"/g,"'"),poemScore].map(v=>`"${v}"`).join(',');
+  });
+  const csv='\uFEFF'+[h.join(','),...rows].join('\n');
+  const a=document.createElement('a');
+  a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);
+  a.download=`dermtrack_${new Date().toISOString().split('T')[0]}.csv`;
+  a.click();
+  toast('CSV экспортирован');
+}
+
+// ── SETTINGS ──────────────────────────────────
+function loadSettings(){
+  const s=getS();
+  document.getElementById('tog-remind').classList.toggle('on',!!s.remindEnabled);
+  document.getElementById('time-row').style.display=s.remindEnabled?'flex':'none';
+  if(s.remindTime)document.getElementById('remind-time').value=s.remindTime;
+}
+function toggleReminder(){
+  const s=getS();
+  if(!s.remindEnabled){
+    if('Notification' in window){
+      Notification.requestPermission().then(p=>{
+        if(p==='granted'){
+          s.remindEnabled=true;putS(s);
+          document.getElementById('tog-remind').classList.add('on');
+          document.getElementById('time-row').style.display='flex';
+          scheduleReminder();toast('Напоминания включены');
+        }else toast('Браузер отклонил разрешение на уведомления');
+      });
+    }else toast('Браузер не поддерживает уведомления');
+  }else{
+    s.remindEnabled=false;putS(s);
+    document.getElementById('tog-remind').classList.remove('on');
+    document.getElementById('time-row').style.display='none';
+    if(notifyTmr)clearTimeout(notifyTmr);
+    toast('Напоминания отключены');
+  }
+}
+function saveSettings(){
+  const s=getS();s.remindTime=document.getElementById('remind-time').value;putS(s);scheduleReminder();
+}
+function scheduleReminder(){
+  const s=getS();if(!s.remindEnabled)return;
+  if(notifyTmr)clearTimeout(notifyTmr);
+  const[h,m]=(s.remindTime||'21:00').split(':').map(Number);
+  const now=new Date(),target=new Date(now);
+  target.setHours(h,m,0,0);
+  if(target<=now)target.setDate(target.getDate()+1);
+  notifyTmr=setTimeout(()=>{
+    if(Notification.permission==='granted'&&!DB[todayKey()])
+      new Notification('DermTrack 🌿',{body:'Не забудь заполнить дневник кожи сегодня'});
+    scheduleReminder();
+  },target-now);
+}
+function confirmClear(){
+  if(confirm('Удалить все записи? Это действие нельзя отменить.')){DB={};saveDB();toast('Данные удалены');}
+}
+function toast(msg){
+  const t=document.getElementById('toast');t.textContent=msg;t.classList.add('on');
+  setTimeout(()=>t.classList.remove('on'),2300);
+}
+
+// ── INIT ──────────────────────────────────────
+loadDB();
+loadPoem();
+['q-itch','q-red','q-dry','q-swell'].forEach(initTap);
+initChips('ch-weather');
+initPoemOptions();
+prefill();
+updateStreak();
+scheduleReminder();
+document.getElementById('hdr-date').textContent=new Date().toLocaleDateString('ru',{weekday:'long',day:'numeric',month:'long'});
+
+if('serviceWorker' in navigator){
+  window.addEventListener('load',()=>{
+    navigator.serviceWorker.register('./sw.js').catch(()=>{});
+  });
+}
+</script>
+</body>
+</html>
