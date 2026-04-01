@@ -1,4 +1,4 @@
-const CACHE = 'dermtrack-v3';
+const CACHE = 'dermtrack-v4';
 const ASSETS = [
   './index.html',
   './manifest.json',

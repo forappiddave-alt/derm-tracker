@@ -28,7 +28,7 @@
 }
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
 html,body{height:100%;overscroll-behavior:none;}
-body{background:var(--cream);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.5;max-width:520px;margin:0 auto;min-height:100vh;padding-bottom:88px;}
+body{background:var(--cream);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.5;max-width:520px;margin:0 auto;min-height:100vh;padding-bottom:calc(88px + env(safe-area-inset-bottom));}
 
 .nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:520px;background:rgba(245,240,232,.95);backdrop-filter:blur(20px);border-top:1px solid var(--cream3);display:flex;z-index:100;padding:10px 0 max(14px,env(safe-area-inset-bottom));}
 .nb{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;background:none;border:none;cursor:pointer;font-family:var(--sans);font-size:10px;font-weight:500;color:var(--ink3);transition:color .2s;letter-spacing:.02em;}
@@ -553,9 +553,7 @@ input[type=time]{background:var(--cream);border:1.5px solid var(--cream3);border
         <span class="cal-month" id="cal-lbl"></span>
         <button class="cal-arr" onclick="calShift(1)">›</button>
       </div>
-      <div class="cal-g" id="cal-heads"></div>
-      <div style="height:4px"></div>
-      <div class="cal-g" id="cal-cells"></div>
+      <div class="cal-g" id="cal-grid"></div>
       <div style="height:12px"></div>
       <div style="display:flex;justify-content:center;gap:14px;font-size:11px;font-weight:500">
         <span style="color:var(--sage)">● Хорошо</span>
@@ -745,6 +743,12 @@ function toggleDetails(){
   detOpen=!detOpen;
   document.getElementById('details-wrap').style.display=detOpen?'block':'none';
   document.getElementById('toggle-det').textContent=detOpen?'Свернуть −':'Развернуть +';
+  if(detOpen){
+    setTimeout(()=>{
+      const btn=document.querySelector('#pg-log .btn-primary');
+      if(btn)btn.scrollIntoView({behavior:'smooth',block:'end'});
+    },50);
+  }
 }
 
 // ── save log ───────────────────────────────────
@@ -1098,11 +1102,12 @@ function renderJournal(){
   const now=new Date();
   const dt=new Date(now.getFullYear(),now.getMonth()+calOff,1);
   document.getElementById('cal-lbl').textContent=`${MONTHS_NOM[dt.getMonth()]} ${dt.getFullYear()}`;
-  document.getElementById('cal-heads').innerHTML=['Пн','Вт','Ср','Чт','Пт','Сб','Вс'].map(d=>`<div class="cg-h">${d}</div>`).join('');
   let dow=dt.getDay();dow=dow===0?6:dow-1;
   const dim=new Date(dt.getFullYear(),dt.getMonth()+1,0).getDate();
-  const todayStr=new Date().toISOString().split('T')[0];
-  let html='';
+  // Use local date (not UTC) to avoid off-by-one on phones
+  const todayStr=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
+  // Single grid: headers + empty cells + day cells (fixes column misalignment)
+  let html=['Пн','Вт','Ср','Чт','Пт','Сб','Вс'].map(d=>`<div class="cg-h">${d}</div>`).join('');
   for(let i=0;i<dow;i++)html+='<div class="cg-d empty"></div>';
   for(let d=1;d<=dim;d++){
     const key=`${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
@@ -1114,7 +1119,7 @@ function renderJournal(){
     if(key===todayStr)cls+=' today';
     html+=`<div class="${cls}" onclick="openEntry('${key}')">${d}</div>`;
   }
-  document.getElementById('cal-cells').innerHTML=html;
+  document.getElementById('cal-grid').innerHTML=html;
   const allKeys=Object.keys(DB).sort().reverse();
   document.getElementById('jcount').textContent=`${allKeys.length} записей`;
   const hl=document.getElementById('hist-list');
