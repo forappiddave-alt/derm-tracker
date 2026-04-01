@@ -1107,9 +1107,8 @@ function renderJournal(){
   const dim=new Date(dt.getFullYear(),dt.getMonth()+1,0).getDate();
   // Use local date (not UTC) to avoid off-by-one on phones
   const todayStr=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
-  // Single grid: headers + empty cells + day cells (fixes column misalignment)
+  // Single grid: headers + day cells; first day positioned via grid-column-start (no empty spacer cells)
   let html=['Пн','Вт','Ср','Чт','Пт','Сб','Вс'].map(d=>`<div class="cg-h">${d}</div>`).join('');
-  for(let i=0;i<dow;i++)html+='<div class="cg-d empty"></div>';
   for(let d=1;d<=dim;d++){
     const key=`${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
     const e=DB[key];
@@ -1118,7 +1117,8 @@ function renderJournal(){
     else if(e?.outcome==='mid')cls+=' mid';
     else if(e?.outcome==='bad')cls+=' bad';
     if(key===todayStr)cls+=' today';
-    html+=`<div class="${cls}" onclick="openEntry('${key}')">${d}</div>`;
+    const gcStart=d===1&&dow>0?` style="grid-column-start:${dow+1}"`:'';
+    html+=`<div class="${cls}"${gcStart} onclick="openEntry('${key}')">${d}</div>`;
   }
   document.getElementById('cal-grid').innerHTML=html;
   const allKeys=Object.keys(DB).sort().reverse();
