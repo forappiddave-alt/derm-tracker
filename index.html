@@ -27,7 +27,8 @@
   --shadow-md:0 4px 24px rgba(28,24,20,.12);
 }
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
-html,body{height:100%;overscroll-behavior:none;}
+html{height:100%;overscroll-behavior:none;scroll-padding-bottom:calc(88px + env(safe-area-inset-bottom));}
+body{overscroll-behavior:none;}
 body{background:var(--cream);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.5;max-width:520px;margin:0 auto;min-height:100vh;padding-bottom:calc(88px + env(safe-area-inset-bottom));}
 
 .nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:520px;background:rgba(245,240,232,.95);backdrop-filter:blur(20px);border-top:1px solid var(--cream3);display:flex;z-index:100;padding:10px 0 max(14px,env(safe-area-inset-bottom));}
@@ -177,7 +178,7 @@ textarea:focus,input[type=text]:focus{border-color:var(--ink);}
 .cal-month{font-family:var(--serif);font-size:16px;}
 .cal-arr{background:none;border:none;cursor:pointer;padding:6px;color:var(--ink2);font-size:20px;border-radius:8px;line-height:1;}
 .cal-arr:hover{background:var(--cream2);}
-.cal-g{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;}
+.cal-g{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:3px;}
 .cg-h{font-size:10px;color:var(--ink3);text-align:center;padding:3px 0;font-weight:500;}
 .cg-d{aspect-ratio:1;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:500;color:var(--ink3);cursor:pointer;transition:all .15s;}
 .cg-d:hover{background:var(--cream2);}
