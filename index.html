@@ -651,13 +651,75 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
 
 <script>
 const SK='dermtrack2',SS='dermtrack_s',PSK='dermtrack_poem';
+const API_URL='https://api.dermtracker.ru:3001/api';
 let DB={},POEM={},outcome=null,antiVal=null,calOff=0,notifyTmr=null,detOpen=false;
 let symptomToggleState={itch:true,red:true,dry:true,swell:true};
 
-function loadDB(){try{DB=JSON.parse(localStorage.getItem(SK)||'{}')}catch(e){DB={}}}
-function saveDB(){localStorage.setItem(SK,JSON.stringify(DB))}
-function loadPoem(){try{POEM=JSON.parse(localStorage.getItem(PSK)||'{}')}catch(e){POEM={}}}
-function savePoem_(){localStorage.setItem(PSK,JSON.stringify(POEM))}
+function toApi(date,e){
+  return {
+    date,
+    itch:e.itch,redness:e.red,dryness:e.dry,swelling:e.swell,
+    outcome:e.outcome,stress:e.stress,weather:e.weather,
+    food:e.food,other_triggers:e.other,cream:e.cream,
+    antihistamine:e.anti!=null?(e.anti?1:0):null,
+    care:e.care,sleep:e.sleep,general_feel:e.feel,notes:e.notes
+  };
+}
+function fromApi(row){
+  return {
+    itch:row.itch,red:row.redness,dry:row.dryness,swell:row.swelling,
+    outcome:row.outcome,stress:row.stress,
+    weather:Array.isArray(row.weather)?row.weather:[],
+    food:row.food||'',other:row.other_triggers||'',cream:row.cream||'',
+    anti:row.antihistamine===1?true:row.antihistamine===0?false:null,
+    care:row.care,sleep:row.sleep,feel:row.general_feel,notes:row.notes||'',
+    ts:new Date(row.created_at).getTime()
+  };
+}
+async function loadDB(){
+  try{
+    const r=await fetch(`${API_URL}/entries`);
+    if(r.ok){
+      const rows=await r.json();
+      DB={};rows.forEach(row=>{DB[row.date]=fromApi(row);});
+      localStorage.setItem(SK,JSON.stringify(DB));return;
+    }
+  }catch(e){}
+  try{DB=JSON.parse(localStorage.getItem(SK)||'{}')}catch(e){DB={}}
+}
+async function saveDB(date,entry){
+  try{
+    await fetch(`${API_URL}/entries`,{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify(toApi(date,entry))
+    });
+  }catch(e){}
+  localStorage.setItem(SK,JSON.stringify(DB));
+}
+async function loadPoem(){
+  try{
+    const r=await fetch(`${API_URL}/poem`);
+    if(r.ok){
+      const rows=await r.json();
+      POEM={};
+      rows.forEach(row=>{POEM[row.week_start]={score:row.total_score,ts:new Date(row.created_at).getTime()};});
+      localStorage.setItem(PSK,JSON.stringify(POEM));return;
+    }
+  }catch(e){}
+  try{POEM=JSON.parse(localStorage.getItem(PSK)||'{}')}catch(e){POEM={}}
+}
+async function savePoem_(weekKey,vals){
+  const[itching,sleep_disturbance,bleeding,weeping,cracking,peeling,dryness]=vals;
+  try{
+    await fetch(`${API_URL}/poem`,{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({week_start:weekKey,itching,sleep_disturbance,bleeding,weeping,cracking,peeling,dryness})
+    });
+  }catch(e){}
+  localStorage.setItem(PSK,JSON.stringify(POEM));
+}
 function todayKey(){return new Date().toISOString().split('T')[0]}
 function getWeekKey(date){
   const d=new Date(date);
@@ -793,7 +855,11 @@ function saveLog(){
     notes:document.getElementById('notes-in').value.trim(),
     ts:Date.now()
   };
-  DB[todayKey()]=entry;saveDB();updateStreak();toast('Запись сохранена ✓');
+  const today=todayKey();
+  DB[today]=entry;
+  toast('Запись сохранена ✓');
+  updateStreak();
+  saveDB(today,entry);
 }
 
 // ── save POEM ──────────────────────────────────
@@ -803,7 +869,7 @@ function savePoem(){
   const score=vals.reduce((a,b)=>a+b,0);
   const weekKey=getWeekKey(new Date());
   POEM[weekKey]={score,ts:Date.now()};
-  savePoem_();
+  savePoem_(weekKey,vals);
   toast(`POEM сохранен • ${score} баллов`);
   renderPoemHistory();
 }
@@ -1243,7 +1309,7 @@ function scheduleReminder(){
   },target-now);
 }
 function confirmClear(){
-  if(confirm('Удалить все записи? Это действие нельзя отменить.')){DB={};saveDB();toast('Данные удалены');}
+  if(confirm('Удалить все записи? Это действие нельзя отменить.')){DB={};localStorage.setItem(SK,JSON.stringify(DB));toast('Данные удалены');}
 }
 function toast(msg){
   const t=document.getElementById('toast');t.textContent=msg;t.classList.add('on');
@@ -1251,15 +1317,16 @@ function toast(msg){
 }
 
 // ── INIT ──────────────────────────────────────
-loadDB();
-loadPoem();
-['q-itch','q-red','q-dry','q-swell'].forEach(initTap);
-initChips('ch-weather');
-initPoemOptions();
-prefill();
-updateStreak();
-scheduleReminder();
-document.getElementById('hdr-date').textContent=new Date().toLocaleDateString('ru',{weekday:'long',day:'numeric',month:'long'});
+(async()=>{
+  document.getElementById('hdr-date').textContent=new Date().toLocaleDateString('ru',{weekday:'long',day:'numeric',month:'long'});
+  ['q-itch','q-red','q-dry','q-swell'].forEach(initTap);
+  initChips('ch-weather');
+  initPoemOptions();
+  scheduleReminder();
+  await Promise.all([loadDB(),loadPoem()]);
+  prefill();
+  updateStreak();
+})();
 
 if('serviceWorker' in navigator){
   window.addEventListener('load',()=>{
