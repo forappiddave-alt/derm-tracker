@@ -1,0 +1,9 @@
+node_modules/
+data/
+certs/
+certs-app/
+.env
+*.db
+*.pem
+*.key
+*.cer
