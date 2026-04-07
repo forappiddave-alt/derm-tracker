@@ -39,8 +39,13 @@ body{background:var(--cream);color:var(--ink);font-family:var(--sans);font-size:
 .nb.on .dot{opacity:1;}
 
 .page{display:none;}
-.page.on{display:block;animation:fi .25s ease;}
-@keyframes fi{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
+.page.on{display:block;animation:page-in .22s cubic-bezier(.25,.1,.25,1) both;}
+@keyframes page-in{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
+@keyframes page-in-right{from{opacity:0;transform:translateX(18px)}to{opacity:1;transform:none}}
+@keyframes page-in-left{from{opacity:0;transform:translateX(-18px)}to{opacity:1;transform:none}}
+.page.on.from-right{animation-name:page-in-right}
+.page.on.from-left{animation-name:page-in-left}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 
 .hdr{padding:52px 20px 14px;position:sticky;top:0;z-index:50;background:rgba(233,233,233,.92);backdrop-filter:blur(16px);}
 .hdr-row{display:flex;align-items:baseline;justify-content:space-between;}
@@ -113,7 +118,12 @@ textarea:focus,input[type=text]:focus{border-color:var(--ink);}
 
 /* STATS */
 .stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:0 16px;margin-bottom:10px;}
-.stat-card{background:#fff;border-radius:var(--r);box-shadow:var(--shadow);padding:16px;}
+.stat-card{background:#fff;border-radius:var(--r);box-shadow:var(--shadow);padding:16px;animation:pop-in .2s ease both;}
+.stat-card:nth-child(1){animation-delay:0ms}
+.stat-card:nth-child(2){animation-delay:50ms}
+.stat-card:nth-child(3){animation-delay:100ms}
+.stat-card:nth-child(4){animation-delay:150ms}
+@keyframes pop-in{from{opacity:0;transform:scale(.96) translateY(4px)}to{opacity:1;transform:none}}
 .stat-lbl{font-size:10px;color:var(--ink3);font-weight:500;letter-spacing:.06em;text-transform:uppercase;margin-bottom:6px;}
 .stat-val{font-family:var(--serif);font-size:32px;font-weight:400;line-height:1;}
 .stat-sub{font-size:11px;color:var(--ink3);margin-top:3px;}
@@ -126,7 +136,11 @@ textarea:focus,input[type=text]:focus{border-color:var(--ink);}
 .chart-title{font-size:13px;font-weight:500;margin-bottom:14px;}
 .bar-chart{display:flex;align-items:flex-end;gap:3px;height:88px;}
 .bc-col{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;}
-.bc-bar{width:100%;border-radius:4px 4px 0 0;min-height:2px;}
+.bc-bar{width:100%;border-radius:4px 4px 0 0;min-height:2px;transform-origin:bottom;animation:bar-grow .3s cubic-bezier(.34,1.56,.64,1) both;}
+@keyframes bar-grow{from{transform:scaleY(0)}to{transform:scaleY(1)}}
+@keyframes draw-line{to{stroke-dashoffset:0}}
+@keyframes shimmer{to{background-position:200% center}}
+.skeleton{border-radius:var(--r);background:linear-gradient(90deg,var(--cream2) 25%,var(--cream3) 50%,var(--cream2) 75%);background-size:200%;animation:shimmer 1.2s infinite;}
 .bc-lbl{font-size:9px;color:var(--ink3);}
 
 .donut-wrap{display:flex;align-items:center;gap:16px;}
@@ -738,12 +752,34 @@ function fmtKey(k){
   return `${+d} ${MONTHS_RU[+m-1]}, ${DW[dt.getDay()]}`;
 }
 
+// ── smooth bezier path ─────────────────────────
+function smoothPath(pts){
+  if(pts.length<2)return'';
+  let d=`M${pts[0][0]},${pts[0][1]}`;
+  for(let i=1;i<pts.length;i++){
+    const p0=pts[Math.max(i-2,0)],p1=pts[i-1],p2=pts[i],p3=pts[Math.min(i+1,pts.length-1)];
+    const cp1x=p1[0]+(p2[0]-p0[0])/6, cp1y=p1[1]+(p2[1]-p0[1])/6;
+    const cp2x=p2[0]-(p3[0]-p1[0])/6, cp2y=p2[1]-(p3[1]-p1[1])/6;
+    d+=`C${cp1x},${cp1y},${cp2x},${cp2y},${p2[0]},${p2[1]}`;
+  }
+  return d;
+}
+
 // ── page ───────────────────────────────────────
+const PAGE_ORDER=['log','stats','poem','journal','settings'];
+let currentPage='log';
 function showPage(n){
-  document.querySelectorAll('.page').forEach(p=>p.classList.remove('on'));
+  const fromIdx=PAGE_ORDER.indexOf(currentPage);
+  const toIdx=PAGE_ORDER.indexOf(n);
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('on','from-right','from-left'));
   document.querySelectorAll('.nb').forEach(b=>b.classList.remove('on'));
-  document.getElementById('pg-'+n).classList.add('on');
+  const pg=document.getElementById('pg-'+n);
+  pg.classList.add('on');
+  if(fromIdx!==-1&&toIdx!==-1&&fromIdx!==toIdx){
+    pg.classList.add(toIdx>fromIdx?'from-right':'from-left');
+  }
   document.getElementById('nb-'+n).classList.add('on');
+  currentPage=n;
   if(n==='stats'){renderStats();renderSymptomChart();renderPoemChart();}
   if(n==='journal')renderJournal();
   if(n==='poem')renderPoemHistory();
@@ -956,11 +992,11 @@ function renderStats(){
   const last14=Object.keys(DB).sort().slice(-14);
   const ci=document.getElementById('chart-itch');
   ci.innerHTML='';
-  last14.forEach(k=>{
+  last14.forEach((k,idx)=>{
     const v=DB[k].itch??0;
     const h=Math.round((v/10)*80);
     const col=v<=3?'var(--sage)':v<=6?'var(--amber)':'var(--rose)';
-    ci.innerHTML+=`<div class="bc-col"><div class="bc-bar" style="height:${h}px;background:${col}"></div><span class="bc-lbl">${new Date(k).getDate()}</span></div>`;
+    ci.innerHTML+=`<div class="bc-col"><div class="bc-bar" style="height:${h}px;background:${col};animation-delay:${idx*20}ms"></div><span class="bc-lbl">${new Date(k).getDate()}</span></div>`;
   });
   if(!last14.length)ci.innerHTML='<div style="font-size:12px;color:var(--ink3);text-align:center;width:100%">Нет данных</div>';
 
@@ -1092,7 +1128,7 @@ function renderSymptomChart(){
     }).filter(p=>p);
 
     if(points.length>1){
-      const d=points.map((p,i)=>i===0?`M${p[0]},${p[1]}`:`L${p[0]},${p[1]}`).join('');
+      const d=smoothPath(points);
       svg+=`<path d="${d}" fill="none" stroke="${colors[sym]}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>`;
     }
 
@@ -1101,7 +1137,14 @@ function renderSymptomChart(){
     });
   });
 
-  document.getElementById('symptom-chart').innerHTML=svg;
+  const scEl=document.getElementById('symptom-chart');
+  scEl.innerHTML=svg;
+  scEl.querySelectorAll('path[stroke]').forEach((path,i)=>{
+    const len=path.getTotalLength();
+    path.style.strokeDasharray=len;
+    path.style.strokeDashoffset=len;
+    path.style.animation=`draw-line .5s ease forwards ${i*0.08}s`;
+  });
 }
 
 function toggleSymptom(sym){
@@ -1157,7 +1200,7 @@ function renderPoemChart(){
   });
 
   if(points.length>1){
-    const d=points.map((p,i)=>i===0?`M${p.x},${p.y}`:`L${p.x},${p.y}`).join('');
+    const d=smoothPath(points.map(p=>[p.x,p.y]));
     svg+=`<path d="${d}" fill="none" stroke="var(--ink)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>`;
   }
 
@@ -1179,7 +1222,14 @@ function renderPoemChart(){
     }
   });
 
-  document.getElementById('poem-chart').innerHTML=svg;
+  const pcEl=document.getElementById('poem-chart');
+  pcEl.innerHTML=svg;
+  pcEl.querySelectorAll('path[stroke]').forEach(path=>{
+    const len=path.getTotalLength();
+    path.style.strokeDasharray=len;
+    path.style.strokeDashoffset=len;
+    path.style.animation='draw-line .5s ease forwards';
+  });
 }
 
 // ── JOURNAL / CALENDAR ─────────────────────────
