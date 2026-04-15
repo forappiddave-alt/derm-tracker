@@ -1,6 +1,5 @@
-const CACHE = 'dermtrack-v6';
+const CACHE = 'dermtrack-v7';
 const ASSETS = [
-  './index.html',
   './manifest.json',
   './icon-192.png',
   './icon-512.png',
@@ -22,6 +21,23 @@ self.addEventListener('activate', e => {
 });
 
 self.addEventListener('fetch', e => {
+  const url = new URL(e.request.url);
+
+  // HTML-навигация (index.html, /auth/callback и т.п.) — всегда сеть, кэш как fallback
+  if (e.request.mode === 'navigate') {
+    e.respondWith(
+      fetch(e.request).catch(() => caches.match('./index.html'))
+    );
+    return;
+  }
+
+  // API-запросы — не кэшируем
+  if (url.hostname === 'api.dermtracker.ru') {
+    e.respondWith(fetch(e.request));
+    return;
+  }
+
+  // Статика (иконки, шрифты) — cache-first
   e.respondWith(
     caches.match(e.request).then(cached => cached || fetch(e.request).then(resp => {
       if (resp && resp.status === 200 && e.request.method === 'GET') {
@@ -29,6 +45,6 @@ self.addEventListener('fetch', e => {
         caches.open(CACHE).then(cache => cache.put(e.request, clone));
       }
       return resp;
-    }).catch(() => cached))
+    }))
   );
 });
