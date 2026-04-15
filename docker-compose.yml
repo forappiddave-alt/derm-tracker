@@ -2,10 +2,10 @@ services:
   api:
     build: .
     restart: unless-stopped
+    env_file: .env
     environment:
       - PORT=3000
       - DB_PATH=/app/data/dermtrack.db
-      - ALLOWED_ORIGINS=${ALLOWED_ORIGINS}
     volumes:
       - ./data:/app/data
 
