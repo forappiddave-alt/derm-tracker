@@ -15,7 +15,8 @@ jobs:
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_KEY }}
           script: |
+            git config --global --add safe.directory /opt/derm-tracker
+            sudo git -C /opt/derm-tracker pull origin main
             cd /opt/derm-tracker
-            git pull origin main
-            docker compose up -d --build
-            docker image prune -f
+            sudo docker compose up -d --build
+            sudo docker image prune -f
