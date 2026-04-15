@@ -16,12 +16,14 @@ app.use(cors({
         else cb(new Error('Not allowed by CORS'));
       }
     : true,
-  methods: ['GET', 'POST', 'DELETE'],
+  methods: ['GET', 'POST', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
 }));
 
 app.use(express.json());
 
 app.get('/api/health', (_req, res) => res.json({ ok: true }));
+app.use('/api/auth',    require('./routes/auth'));
 app.use('/api/entries', require('./routes/entries'));
 app.use('/api/stats',   require('./routes/stats'));
 app.use('/api/poem',    require('./routes/poem'));

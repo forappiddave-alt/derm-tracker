@@ -1,14 +1,15 @@
 const { Router } = require('express');
 const db = require('../db');
+const { requireAuth } = require('../auth/middleware');
 
 const router = Router();
-const USER_ID = 'default';
+router.use(requireAuth);
 
 // GET /api/entries?from=YYYY-MM-DD&to=YYYY-MM-DD
 router.get('/', (req, res) => {
   const { from, to } = req.query;
   let query = 'SELECT * FROM entries WHERE user_id = ?';
-  const params = [USER_ID];
+  const params = [req.user.uuid];
 
   if (from) { query += ' AND date >= ?'; params.push(from); }
   if (to)   { query += ' AND date <= ?'; params.push(to); }
@@ -23,7 +24,7 @@ router.get('/', (req, res) => {
 router.get('/:date', (req, res) => {
   const row = db.prepare(
     'SELECT * FROM entries WHERE user_id = ? AND date = ?'
-  ).get(USER_ID, req.params.date);
+  ).get(req.user.uuid, req.params.date);
 
   if (!row) return res.status(404).json({ error: 'not found' });
   if (row.weather) row.weather = JSON.parse(row.weather);
@@ -65,7 +66,7 @@ router.post('/', (req, res) => {
       notes = excluded.notes,
       updated_at = datetime('now')
   `).run(
-    USER_ID, date, itch, redness, dryness, swelling, outcome,
+    req.user.uuid, date, itch, redness, dryness, swelling, outcome,
     stress, weather ? JSON.stringify(weather) : null,
     food, other_triggers, cream, antihistamine ? 1 : 0,
     care, sleep, general_feel, notes
@@ -73,7 +74,7 @@ router.post('/', (req, res) => {
 
   const row = db.prepare(
     'SELECT * FROM entries WHERE user_id = ? AND date = ?'
-  ).get(USER_ID, date);
+  ).get(req.user.uuid, date);
   if (row.weather) row.weather = JSON.parse(row.weather);
   res.json(row);
 });
@@ -82,7 +83,7 @@ router.post('/', (req, res) => {
 router.delete('/:date', (req, res) => {
   const { changes } = db.prepare(
     'DELETE FROM entries WHERE user_id = ? AND date = ?'
-  ).run(USER_ID, req.params.date);
+  ).run(req.user.uuid, req.params.date);
 
   if (!changes) return res.status(404).json({ error: 'not found' });
   res.json({ ok: true });

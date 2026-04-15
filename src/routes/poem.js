@@ -1,8 +1,9 @@
 const { Router } = require('express');
 const db = require('../db');
+const { requireAuth } = require('../auth/middleware');
 
 const router = Router();
-const USER_ID = 'default';
+router.use(requireAuth);
 
 const SYMPTOMS = ['itching', 'sleep_disturbance', 'bleeding', 'weeping', 'cracking', 'peeling', 'dryness'];
 
@@ -12,7 +13,7 @@ router.get('/', (req, res) => {
     SELECT * FROM poem WHERE user_id = ?
     ORDER BY week_start DESC
     LIMIT 20
-  `).all(USER_ID);
+  `).all(req.user.uuid);
   res.json(rows);
 });
 
@@ -42,11 +43,11 @@ router.post('/', (req, res) => {
       peeling = excluded.peeling,
       dryness = excluded.dryness,
       total_score = excluded.total_score
-  `).run(USER_ID, week_start, ...vals, total_score);
+  `).run(req.user.uuid, week_start, ...vals, total_score);
 
   const row = db.prepare(
     'SELECT * FROM poem WHERE user_id = ? AND week_start = ?'
-  ).get(USER_ID, week_start);
+  ).get(req.user.uuid, week_start);
   res.json(row);
 });
 

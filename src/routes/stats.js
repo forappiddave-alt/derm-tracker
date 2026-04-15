@@ -1,8 +1,9 @@
 const { Router } = require('express');
 const db = require('../db');
+const { requireAuth } = require('../auth/middleware');
 
 const router = Router();
-const USER_ID = 'default';
+router.use(requireAuth);
 
 // GET /api/stats?days=30
 router.get('/', (req, res) => {
@@ -15,7 +16,7 @@ router.get('/', (req, res) => {
     SELECT * FROM entries
     WHERE user_id = ? AND date >= ?
     ORDER BY date ASC
-  `).all(USER_ID, fromStr);
+  `).all(req.user.uuid, fromStr);
 
   if (!entries.length) return res.json({ entries: [], summary: {}, triggers: [] });
 

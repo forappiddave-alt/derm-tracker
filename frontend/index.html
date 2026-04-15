@@ -260,9 +260,27 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
 
 /* CHIP TOUCH SIZE */
 .chip,.radio-chip,.pq-option,.ctc{min-height:36px;display:inline-flex;align-items:center;}
+
+/* AUTH GATE */
+#auth-gate{position:fixed;inset:0;background:var(--cream);z-index:500;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px;}
+#auth-gate .ag-logo{font-family:var(--serif);font-size:36px;color:var(--ink);margin-bottom:8px;}
+#auth-gate .ag-sub{font-size:14px;color:var(--ink2);margin-bottom:48px;text-align:center;line-height:1.6;}
+#auth-gate .ag-btn{display:flex;align-items:center;gap:10px;background:var(--ink);color:var(--cream);font-family:var(--sans);font-size:15px;font-weight:500;border:none;border-radius:14px;padding:14px 24px;cursor:pointer;transition:opacity .2s;}
+#auth-gate .ag-btn:active{opacity:.75;}
+#auth-gate .ag-err{margin-top:20px;font-size:13px;color:var(--rose);text-align:center;}
 </style>
 </head>
 <body>
+
+<div id="auth-gate" style="display:none">
+  <div class="ag-logo">🧴 DermTrack</div>
+  <div class="ag-sub">Трекер состояния кожи.<br>Войдите чтобы продолжить.</div>
+  <button class="ag-btn" onclick="loginWithYandex()">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="12" fill="#FC3F1D"/><text x="12" y="17" text-anchor="middle" font-size="14" font-weight="bold" fill="#fff" font-family="Arial">Я</text></svg>
+    Войти через Яндекс
+  </button>
+  <div class="ag-err" id="auth-err"></div>
+</div>
 
 <div class="toast" id="toast"></div>
 
@@ -630,6 +648,15 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
     </div>
   </div>
   <div style="padding:0 16px;margin-bottom:20px">
+    <div class="ss-title" style="margin-bottom:8px">Аккаунт</div>
+    <div class="ss-card">
+      <div class="ss-row">
+        <div><div class="ss-lbl" id="acct-name">—</div><div class="ss-sub" id="acct-email"></div></div>
+        <button class="btn-sm" onclick="logout()" style="color:var(--rose);border-color:var(--rose)">Выйти</button>
+      </div>
+    </div>
+  </div>
+  <div style="padding:0 16px;margin-bottom:20px">
     <div class="ss-title" style="margin-bottom:8px">О приложении</div>
     <div class="ss-card">
       <div class="ss-row"><div class="ss-lbl">Версия</div><span style="font-size:13px;color:var(--ink3)">3.0</span></div>
@@ -666,6 +693,45 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
 <script>
 const SK='dermtrack2',SS='dermtrack_s',PSK='dermtrack_poem';
 const API_URL='https://api.dermtracker.ru:3001/api';
+const YANDEX_CLIENT_ID='2225e09ad826406887d45514d0959830';
+const OAUTH_REDIRECT='https://app.dermtracker.ru/auth/callback';
+
+// ── Auth helpers ───────────────────────────────
+let authToken=localStorage.getItem('dermtrack_token')||null;
+let authUser=JSON.parse(localStorage.getItem('dermtrack_user')||'null');
+
+function api(path,opts={}){
+  const headers={'Content-Type':'application/json',...(opts.headers||{})};
+  if(authToken)headers['Authorization']='Bearer '+authToken;
+  return fetch(API_URL+path,{...opts,headers});
+}
+function loginWithYandex(){
+  const url='https://oauth.yandex.ru/authorize?response_type=code'
+    +'&client_id='+YANDEX_CLIENT_ID
+    +'&redirect_uri='+encodeURIComponent(OAUTH_REDIRECT)
+    +'&force_confirm=false';
+  window.location.href=url;
+}
+function logout(){
+  authToken=null;authUser=null;
+  localStorage.removeItem('dermtrack_token');
+  localStorage.removeItem('dermtrack_user');
+  showAuthGate();
+}
+function showAuthGate(){
+  document.getElementById('auth-gate').style.display='flex';
+}
+function hideAuthGate(){
+  document.getElementById('auth-gate').style.display='none';
+}
+function updateAccountUI(){
+  if(!authUser)return;
+  const n=document.getElementById('acct-name');
+  const e=document.getElementById('acct-email');
+  if(n)n.textContent=authUser.display_name||'Аккаунт';
+  if(e)e.textContent=authUser.email||'';
+}
+
 let DB={},POEM={},outcome=null,antiVal=null,calOff=0,notifyTmr=null,detOpen=false,dbLoading=true;
 function haptic(){if(navigator.vibrate)navigator.vibrate(10);}
 document.addEventListener('click',e=>{
@@ -696,7 +762,7 @@ function fromApi(row){
 }
 async function loadDB(){
   try{
-    const r=await fetch(`${API_URL}/entries`);
+    const r=await api('/entries');
     if(r.ok){
       const rows=await r.json();
       DB={};rows.forEach(row=>{DB[row.date]=fromApi(row);});
@@ -707,9 +773,8 @@ async function loadDB(){
 }
 async function saveDB(date,entry){
   try{
-    await fetch(`${API_URL}/entries`,{
+    await api('/entries',{
       method:'POST',
-      headers:{'Content-Type':'application/json'},
       body:JSON.stringify(toApi(date,entry))
     });
   }catch(e){}
@@ -717,7 +782,7 @@ async function saveDB(date,entry){
 }
 async function loadPoem(){
   try{
-    const r=await fetch(`${API_URL}/poem`);
+    const r=await api('/poem');
     if(r.ok){
       const rows=await r.json();
       POEM={};
@@ -730,9 +795,8 @@ async function loadPoem(){
 async function savePoem_(weekKey,vals){
   const[itching,sleep_disturbance,bleeding,weeping,cracking,peeling,dryness]=vals;
   try{
-    await fetch(`${API_URL}/poem`,{
+    await api('/poem',{
       method:'POST',
-      headers:{'Content-Type':'application/json'},
       body:JSON.stringify({week_start:weekKey,itching,sleep_disturbance,bleeding,weeping,cracking,peeling,dryness})
     });
   }catch(e){}
@@ -1382,6 +1446,40 @@ function toast(msg){
 
 // ── INIT ──────────────────────────────────────
 (async()=>{
+  // ── OAuth callback ─────────────────────────
+  if(location.pathname==='/auth/callback'){
+    const code=new URLSearchParams(location.search).get('code');
+    if(code){
+      try{
+        const r=await fetch(API_URL+'/auth/yandex/callback',{
+          method:'POST',
+          headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({code})
+        });
+        if(r.ok){
+          const data=await r.json();
+          authToken=data.token;
+          authUser=data.user;
+          localStorage.setItem('dermtrack_token',authToken);
+          localStorage.setItem('dermtrack_user',JSON.stringify(authUser));
+          history.replaceState(null,'','/')
+        }else{
+          document.getElementById('auth-err').textContent='Ошибка входа, попробуй ещё раз.';
+          showAuthGate();return;
+        }
+      }catch(e){
+        document.getElementById('auth-err').textContent='Ошибка сети, попробуй ещё раз.';
+        showAuthGate();return;
+      }
+    }
+  }
+
+  // ── Auth gate check ────────────────────────
+  if(!authToken){showAuthGate();return;}
+
+  // ── App init ──────────────────────────────
+  hideAuthGate();
+  updateAccountUI();
   document.getElementById('hdr-date').textContent=new Date().toLocaleDateString('ru',{weekday:'long',day:'numeric',month:'long'});
   ['q-itch','q-red','q-dry','q-swell'].forEach(initTap);
   initChips('ch-weather');

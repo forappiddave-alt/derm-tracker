@@ -25,6 +25,15 @@ db.exec(`
     UNIQUE(user_id, date)
   );
 
+  CREATE TABLE IF NOT EXISTS users (
+    uuid         TEXT PRIMARY KEY,
+    yandex_id    TEXT UNIQUE NOT NULL,
+    email        TEXT,
+    display_name TEXT,
+    created_at   TEXT NOT NULL DEFAULT (datetime('now')),
+    last_login_at TEXT
+  );
+
   CREATE TABLE IF NOT EXISTS poem (
     id                INTEGER PRIMARY KEY AUTOINCREMENT,
     user_id           TEXT    NOT NULL DEFAULT 'default',
