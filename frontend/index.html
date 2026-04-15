@@ -666,7 +666,11 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
 <script>
 const SK='dermtrack2',SS='dermtrack_s',PSK='dermtrack_poem';
 const API_URL='https://api.dermtracker.ru:3001/api';
-let DB={},POEM={},outcome=null,antiVal=null,calOff=0,notifyTmr=null,detOpen=false;
+let DB={},POEM={},outcome=null,antiVal=null,calOff=0,notifyTmr=null,detOpen=false,dbLoading=true;
+function haptic(){if(navigator.vibrate)navigator.vibrate(10);}
+document.addEventListener('click',e=>{
+  if(e.target.closest('.tap-btn,.oq-btn,.chip,.pq-option,.radio-chip,.ctc,.nb,.btn-primary,.btn-sm'))haptic();
+});
 let symptomToggleState={itch:true,red:true,dry:true,swell:true};
 
 function toApi(date,e){
@@ -780,7 +784,7 @@ function showPage(n){
   }
   document.getElementById('nb-'+n).classList.add('on');
   currentPage=n;
-  if(n==='stats'){renderStats();renderSymptomChart();renderPoemChart();}
+  if(n==='stats'){if(dbLoading)renderStatsSkeleton();else{renderStats();renderSymptomChart();renderPoemChart();}}
   if(n==='journal')renderJournal();
   if(n==='poem')renderPoemHistory();
   if(n==='settings')loadSettings();
@@ -969,6 +973,16 @@ function prefill(){
 }
 
 // ── STATS ──────────────────────────────────────
+function renderStatsSkeleton(){
+  document.getElementById('stat-grid').innerHTML=`
+    <div class="stat-card"><div class="skeleton" style="height:12px;width:60%;margin-bottom:10px"></div><div class="skeleton" style="height:28px;width:40%;margin-bottom:8px"></div><div class="skeleton" style="height:10px;width:30%"></div></div>
+    <div class="stat-card"><div class="skeleton" style="height:12px;width:60%;margin-bottom:10px"></div><div class="skeleton" style="height:28px;width:40%;margin-bottom:8px"></div><div class="skeleton" style="height:10px;width:30%"></div></div>
+    <div class="stat-card"><div class="skeleton" style="height:12px;width:60%;margin-bottom:10px"></div><div class="skeleton" style="height:28px;width:40%;margin-bottom:8px"></div><div class="skeleton" style="height:10px;width:30%"></div></div>
+    <div class="stat-card"><div class="skeleton" style="height:12px;width:60%;margin-bottom:10px"></div><div class="skeleton" style="height:28px;width:40%;margin-bottom:8px"></div><div class="skeleton" style="height:10px;width:30%"></div></div>`;
+  document.getElementById('chart-itch').innerHTML='<div class="skeleton" style="height:100px;width:100%"></div>';
+  document.getElementById('donut-wrap').innerHTML='<div class="skeleton" style="height:96px;width:96px;border-radius:50%"></div><div class="skeleton" style="flex:1;height:80px;margin-left:16px"></div>';
+  document.getElementById('trigger-list').innerHTML='<div class="skeleton" style="height:14px;width:80%;margin-bottom:10px"></div><div class="skeleton" style="height:14px;width:70%;margin-bottom:10px"></div><div class="skeleton" style="height:14px;width:60%"></div>';
+}
 function renderStats(){
   const keys=Object.keys(DB).sort().reverse().slice(0,30);
   const entries=keys.map(k=>DB[k]);
@@ -1374,8 +1388,10 @@ function toast(msg){
   initPoemOptions();
   scheduleReminder();
   await Promise.all([loadDB(),loadPoem()]);
+  dbLoading=false;
   prefill();
   updateStreak();
+  if(currentPage==='stats'){renderStats();renderSymptomChart();renderPoemChart();}
 })();
 
 if('serviceWorker' in navigator){
