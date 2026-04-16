@@ -712,10 +712,19 @@ function loginWithYandex(){
     +'&force_confirm=false';
   window.location.href=url;
 }
+function getCookie(name){
+  return document.cookie.split(';').map(c=>c.trim()).find(c=>c.startsWith(name+'='))?.split('=').slice(1).join('=')||null;
+}
+function clearAuthCookies(){
+  const exp='Expires=Thu, 01 Jan 1970 00:00:00 GMT';
+  document.cookie=`dermtrack_token=; Domain=.dermtracker.ru; Path=/; ${exp}`;
+  document.cookie=`dermtrack_user=; Domain=.dermtracker.ru; Path=/; ${exp}`;
+}
 function logout(){
   authToken=null;authUser=null;
   localStorage.removeItem('dermtrack_token');
   localStorage.removeItem('dermtrack_user');
+  clearAuthCookies();
   showAuthGate();
 }
 function showAuthGate(){
@@ -1446,32 +1455,24 @@ function toast(msg){
 
 // ── INIT ──────────────────────────────────────
 (async()=>{
-  // ── OAuth callback ─────────────────────────
-  if(location.pathname==='/auth/callback'){
-    const code=new URLSearchParams(location.search).get('code');
-    if(code){
-      try{
-        const r=await fetch(API_URL+'/auth/yandex/callback',{
-          method:'POST',
-          headers:{'Content-Type':'application/json'},
-          body:JSON.stringify({code})
-        });
-        if(r.ok){
-          const data=await r.json();
-          authToken=data.token;
-          authUser=data.user;
-          localStorage.setItem('dermtrack_token',authToken);
-          localStorage.setItem('dermtrack_user',JSON.stringify(authUser));
-          history.replaceState(null,'','/')
-        }else{
-          document.getElementById('auth-err').textContent='Ошибка входа, попробуй ещё раз.';
-          showAuthGate();return;
-        }
-      }catch(e){
-        document.getElementById('auth-err').textContent='Ошибка сети, попробуй ещё раз.';
-        showAuthGate();return;
-      }
+  // ── Cookie → localStorage (iOS PWA after server-side callback) ─────
+  if(!authToken){
+    const ct=getCookie('dermtrack_token');
+    const cu=getCookie('dermtrack_user');
+    if(ct){
+      authToken=ct;
+      localStorage.setItem('dermtrack_token',ct);
+      if(cu){try{authUser=JSON.parse(decodeURIComponent(cu));localStorage.setItem('dermtrack_user',JSON.stringify(authUser));}catch(e){}}
+      clearAuthCookies();
     }
+  }
+
+  // ── Auth error from server-side callback ───────────────────────────
+  const authError=new URLSearchParams(location.search).get('auth_error');
+  if(authError){
+    document.getElementById('auth-err').textContent='Ошибка входа, попробуй ещё раз.';
+    history.replaceState(null,'','/');
+    showAuthGate();return;
   }
 
   // ── Auth gate check ────────────────────────
